@@ -21,6 +21,32 @@ class UserModel {
     return username;
   }
 
+  /// NIM mahasantri (jika profil Mahasantri)
+  String get nim {
+    return profil?['nim']?.toString() ?? '-';
+  }
+
+  /// Nama lengkap mahasantri / pengguna
+  String get namaLengkap {
+    final nama = profil?['nama']?.toString().trim();
+    if (nama != null && nama.isNotEmpty) return nama;
+    return displayName;
+  }
+
+  /// Kamar mahasantri
+  String get kamar {
+    return profil?['kamar']?.toString() ?? '-';
+  }
+
+  /// Nama musyrif pembina
+  String get namaMusyrif {
+    final musyrif = profil?['musyrif'];
+    if (musyrif is Map<String, dynamic> && musyrif['nama'] != null) {
+      return musyrif['nama'].toString();
+    }
+    return '-';
+  }
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       idPengguna: json['id_pengguna']?.toString() ?? '',

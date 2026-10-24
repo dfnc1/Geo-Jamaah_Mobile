@@ -5,7 +5,10 @@ import '../../features/admin/presentation/admin_placeholder_screen.dart';
 import '../../features/auth/domain/auth_state.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/login_screen.dart';
-import '../../features/mahasantri/presentation/mahasantri_home_placeholder.dart';
+import '../../features/mahasantri/presentation/mahasantri_beranda_screen.dart';
+import '../../features/mahasantri/presentation/mahasantri_izin_placeholder.dart';
+import '../../features/mahasantri/presentation/mahasantri_profil_screen.dart';
+import '../../features/mahasantri/presentation/mahasantri_shell.dart';
 import '../../features/musyrif/presentation/musyrif_home_placeholder.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 
@@ -23,9 +26,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/login',
         builder: (context, state) => const LoginScreen(),
       ),
-      GoRoute(
-        path: '/mahasantri',
-        builder: (context, state) => const MahasantriHomePlaceholder(),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MahasantriShell(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/mahasantri',
+                builder: (context, state) => const MahasantriBerandaScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/mahasantri/izin',
+                builder: (context, state) => const MahasantriIzinPlaceholder(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/mahasantri/profil',
+                builder: (context, state) => const MahasantriProfilScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: '/musyrif',
@@ -53,15 +83,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // 3. Sudah terautentikasi (tidak boleh membuka /login atau /splash)
       if (authState.status == AuthStatus.authenticated) {
         final role = authState.user?.role.toLowerCase();
-        final targetRoute = _targetRouteForRole(role);
 
         if (location == '/login' || location == '/splash') {
-          return targetRoute;
+          return _targetRouteForRole(role);
         }
 
-        // Mencegah akses lintas peran (misal Mahasantri membuka /musyrif)
-        if (location != targetRoute) {
-          return targetRoute;
+        // Mencegah akses lintas peran
+        if (role == 'mahasantri' && !location.startsWith('/mahasantri')) {
+          return '/mahasantri';
+        }
+        if (role == 'musyrif' && !location.startsWith('/musyrif')) {
+          return '/musyrif';
+        }
+        if (role == 'admin' && !location.startsWith('/admin')) {
+          return '/admin';
         }
       }
 
