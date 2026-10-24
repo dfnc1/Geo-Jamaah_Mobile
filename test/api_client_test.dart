@@ -62,9 +62,65 @@ void main() {
     tokenStore = FakeTokenStore();
   });
 
+  group('ApiClient - Normalisasi Base URL dan Path /v1', () {
+    test('normalizeBaseUrl menambahkan /v1 jika belum ada', () {
+      expect(
+        ApiClient.normalizeBaseUrl('http://localhost:3000'),
+        equals('http://localhost:3000/v1'),
+      );
+      expect(
+        ApiClient.normalizeBaseUrl('http://localhost:3000/'),
+        equals('http://localhost:3000/v1'),
+      );
+      expect(
+        ApiClient.normalizeBaseUrl('http://10.0.2.2:3000'),
+        equals('http://10.0.2.2:3000/v1'),
+      );
+    });
+
+    test('normalizeBaseUrl mempertahankan /v1 jika sudah ada', () {
+      expect(
+        ApiClient.normalizeBaseUrl('http://localhost:3000/v1'),
+        equals('http://localhost:3000/v1'),
+      );
+      expect(
+        ApiClient.normalizeBaseUrl('http://localhost:3000/v1/'),
+        equals('http://localhost:3000/v1'),
+      );
+    });
+
+    test('interceptor menormalisasi path agar tidak terjadi duplikasi /v1/v1/', () async {
+      final capturedUris = <Uri>[];
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000/v1'));
+      dio.httpClientAdapter = MockHttpAdapter((options) async {
+        capturedUris.add(options.uri);
+        return ResponseBody.fromString(
+          jsonEncode({'success': true, 'statusCode': 200, 'message': 'OK', 'data': {}}),
+          200,
+          headers: {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+          },
+        );
+      });
+
+      final client = ApiClient(tokenStore: tokenStore, customDio: dio);
+
+      // Panggilan dengan /v1/auth/login
+      await client.post('/v1/auth/login');
+      // Panggilan dengan auth/login
+      await client.post('auth/login');
+      // Panggilan dengan /auth/login
+      await client.post('/auth/login');
+
+      expect(capturedUris[0].toString(), equals('http://localhost:3000/v1/auth/login'));
+      expect(capturedUris[1].toString(), equals('http://localhost:3000/v1/auth/login'));
+      expect(capturedUris[2].toString(), equals('http://localhost:3000/v1/auth/login'));
+    });
+  });
+
   group('ApiClient - Pembuka Bungkus Response {data}', () {
     test('berhasil membuka payload Map dari {success, statusCode, message, data}', () async {
-      final dio = Dio(BaseOptions(baseUrl: 'http://test.local'));
+      final dio = Dio(BaseOptions(baseUrl: 'http://test.local/v1'));
       dio.httpClientAdapter = MockHttpAdapter((options) async {
         final payload = {
           'success': true,
@@ -86,7 +142,7 @@ void main() {
         customDio: dio,
       );
 
-      final res = await client.get('/v1/test');
+      final res = await client.get('/test');
 
       expect(res.data, isA<Map<String, dynamic>>());
       expect(res.data['id'], equals('M001'));
@@ -94,7 +150,7 @@ void main() {
     });
 
     test('berhasil membuka payload List dari {success, statusCode, message, data}', () async {
-      final dio = Dio(BaseOptions(baseUrl: 'http://test.local'));
+      final dio = Dio(BaseOptions(baseUrl: 'http://test.local/v1'));
       dio.httpClientAdapter = MockHttpAdapter((options) async {
         final payload = {
           'success': true,
@@ -119,7 +175,7 @@ void main() {
         customDio: dio,
       );
 
-      final res = await client.get('/v1/jadwal');
+      final res = await client.get('/jadwal');
 
       expect(res.data, isA<List>());
       expect((res.data as List).length, equals(2));
@@ -127,7 +183,7 @@ void main() {
     });
 
     test('menangani data null pada respons sukses', () async {
-      final dio = Dio(BaseOptions(baseUrl: 'http://test.local'));
+      final dio = Dio(BaseOptions(baseUrl: 'http://test.local/v1'));
       dio.httpClientAdapter = MockHttpAdapter((options) async {
         final payload = {
           'success': true,
@@ -149,7 +205,7 @@ void main() {
         customDio: dio,
       );
 
-      final res = await client.delete('/v1/item/1');
+      final res = await client.delete('/item/1');
 
       expect(res.data, isNull);
     });
@@ -157,7 +213,7 @@ void main() {
 
   group('ApiClient - Pemetaan Error ke AppException', () {
     test('memetakan respons error server 404 ke AppException yang tepat', () async {
-      final dio = Dio(BaseOptions(baseUrl: 'http://test.local'));
+      final dio = Dio(BaseOptions(baseUrl: 'http://test.local/v1'));
       dio.httpClientAdapter = MockHttpAdapter((options) async {
         final payload = {
           'success': false,
@@ -180,7 +236,7 @@ void main() {
       );
 
       try {
-        await client.get('/v1/masjid/999');
+        await client.get('/masjid/999');
         fail('Seharusnya melempar AppException');
       } on AppException catch (e) {
         expect(e.code, equals('ERR_MASJID_NOT_FOUND'));
@@ -190,7 +246,7 @@ void main() {
     });
 
     test('memetakan respons validasi 400 ke AppException', () async {
-      final dio = Dio(BaseOptions(baseUrl: 'http://test.local'));
+      final dio = Dio(BaseOptions(baseUrl: 'http://test.local/v1'));
       dio.httpClientAdapter = MockHttpAdapter((options) async {
         final payload = {
           'success': false,
@@ -213,7 +269,7 @@ void main() {
       );
 
       try {
-        await client.post('/v1/auth/login', data: {'username': 'test'});
+        await client.post('/auth/login', data: {'username': 'test'});
         fail('Seharusnya melempar AppException');
       } on AppException catch (e) {
         expect(e.code, equals('ERR_DEVICE_ID_REQUIRED'));
@@ -223,7 +279,7 @@ void main() {
     });
 
     test('memetakan timeout jaringan ke AppException(code: ERR_TIMEOUT)', () async {
-      final dio = Dio(BaseOptions(baseUrl: 'http://test.local'));
+      final dio = Dio(BaseOptions(baseUrl: 'http://test.local/v1'));
       dio.httpClientAdapter = MockHttpAdapter((options) async {
         throw DioException(
           requestOptions: options,
@@ -238,7 +294,7 @@ void main() {
       );
 
       try {
-        await client.get('/v1/timeout');
+        await client.get('/timeout');
         fail('Seharusnya melempar AppException');
       } on AppException catch (e) {
         expect(e.code, equals('ERR_TIMEOUT'));
@@ -252,7 +308,7 @@ void main() {
       await tokenStore.saveToken('jwt-sample-token-12345');
       String? capturedAuthHeader;
 
-      final dio = Dio(BaseOptions(baseUrl: 'http://test.local'));
+      final dio = Dio(BaseOptions(baseUrl: 'http://test.local/v1'));
       dio.httpClientAdapter = MockHttpAdapter((options) async {
         capturedAuthHeader = options.headers['Authorization'] as String?;
         return ResponseBody.fromString(
@@ -269,7 +325,7 @@ void main() {
         customDio: dio,
       );
 
-      await client.get('/v1/protected');
+      await client.get('/protected');
 
       expect(capturedAuthHeader, equals('Bearer jwt-sample-token-12345'));
     });
@@ -278,7 +334,7 @@ void main() {
       await tokenStore.saveToken('expired-token');
       bool logoutCalled = false;
 
-      final dio = Dio(BaseOptions(baseUrl: 'http://test.local'));
+      final dio = Dio(BaseOptions(baseUrl: 'http://test.local/v1'));
       dio.httpClientAdapter = MockHttpAdapter((options) async {
         final payload = {
           'success': false,
@@ -304,7 +360,7 @@ void main() {
       );
 
       try {
-        await client.get('/v1/me');
+        await client.get('/me');
       } catch (_) {}
 
       expect(logoutCalled, isTrue);
@@ -313,7 +369,7 @@ void main() {
     test('tidak memanggil onLogout pada 401 jika request tidak terautentikasi (misal login gagal)', () async {
       bool logoutCalled = false;
 
-      final dio = Dio(BaseOptions(baseUrl: 'http://test.local'));
+      final dio = Dio(BaseOptions(baseUrl: 'http://test.local/v1'));
       dio.httpClientAdapter = MockHttpAdapter((options) async {
         final payload = {
           'success': false,
@@ -339,7 +395,7 @@ void main() {
       );
 
       try {
-        await client.post('/v1/auth/login', data: {'username': 'wrong'});
+        await client.post('/auth/login', data: {'username': 'wrong'});
       } catch (_) {}
 
       expect(logoutCalled, isFalse);

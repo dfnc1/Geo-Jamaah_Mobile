@@ -1,15 +1,28 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app_exception/app_exception.dart';
 import '../token_store/token_store.dart';
 
+/// Notifier event autentikasi (seperti sesi kedaluwarsa 401).
+class AuthEventNotifier extends ChangeNotifier {
+  void notifySessionExpired() => notifyListeners();
+}
+
+/// Provider untuk event autentikasi global.
+final authEventProvider = Provider<AuthEventNotifier>((ref) {
+  return AuthEventNotifier();
+});
+
 /// Provider global untuk ApiClient.
 final apiClientProvider = Provider<ApiClient>((ref) {
   final tokenStore = ref.watch(tokenStoreProvider);
+  final authEvent = ref.watch(authEventProvider);
   return ApiClient(
     tokenStore: tokenStore,
-    onLogout: () async {
-      await tokenStore.clear();
+    onLogout: () {
+      tokenStore.clear();
+      authEvent.notifySessionExpired();
     },
   );
 });
@@ -19,6 +32,7 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 /// 2. Membuka bungkus respons { data }
 /// 3. Mengubah error menjadi AppException(code, message, status)
 /// 4. Logout callback pada HTTP 401 untuk request terautentikasi
+/// 5. Normalisasi base URL dan path endpoint /v1
 class ApiClient {
   final Dio dio;
   final TokenStore tokenStore;
@@ -26,8 +40,20 @@ class ApiClient {
 
   static const String defaultBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3000',
+    defaultValue: 'http://10.0.2.2:3000/v1',
   );
+
+  /// Memastikan base URL selalu berakhir dengan prefix `/v1`
+  static String normalizeBaseUrl(String url) {
+    var trimmed = url.trim();
+    while (trimmed.endsWith('/')) {
+      trimmed = trimmed.substring(0, trimmed.length - 1);
+    }
+    if (!trimmed.endsWith('/v1')) {
+      trimmed = '$trimmed/v1';
+    }
+    return trimmed;
+  }
 
   ApiClient({
     required this.tokenStore,
@@ -37,7 +63,7 @@ class ApiClient {
   }) : dio = customDio ??
             Dio(
               BaseOptions(
-                baseUrl: baseUrl ?? defaultBaseUrl,
+                baseUrl: normalizeBaseUrl(baseUrl ?? defaultBaseUrl),
                 connectTimeout: const Duration(seconds: 15),
                 receiveTimeout: const Duration(seconds: 15),
                 sendTimeout: const Duration(seconds: 15),
@@ -53,6 +79,20 @@ class ApiClient {
   Interceptor _buildInterceptor() {
     return InterceptorsWrapper(
       onRequest: (options, handler) async {
+        // Normalisasi path agar tidak terjadi duplikasi '/v1/v1/'
+        final base = options.baseUrl;
+        final hasV1InBase = base.endsWith('/v1') || base.endsWith('/v1/');
+        if (hasV1InBase && options.path.startsWith('/v1/')) {
+          options.path = options.path.substring(3); // '/v1/path' -> '/path'
+        } else if (hasV1InBase && options.path.startsWith('v1/')) {
+          options.path = '/${options.path.substring(3)}';
+        } else if (!options.path.startsWith('/') &&
+            !options.path.startsWith('http://') &&
+            !options.path.startsWith('https://')) {
+          options.path = '/${options.path}';
+        }
+
+        // Menyertakan token Bearer jika tersedia
         final token = await tokenStore.getToken();
         if (token != null &&
             token.isNotEmpty &&
