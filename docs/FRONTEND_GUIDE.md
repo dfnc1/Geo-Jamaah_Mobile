@@ -1,0 +1,217 @@
+# Frontend Guide - Geo-Jamaah_Server
+
+Panduan singkat untuk tim frontend: cara memanggil API, format respons, autentikasi, dan status kesiapan tiap endpoint.
+
+- Base URL: `http://localhost:3000` (sesuaikan `PORT` di `.env`)
+- Semua endpoint berada di bawah prefix `/v1`
+- Swagger interaktif: `http://localhost:3000/docs`
+- Kontrak lengkap: [`API_CONTRACT.md`](./API_CONTRACT.md)
+
+## Status Endpoint
+
+Legenda: 🟢 **Siap** = sudah ada di kode dan teruji. ⚪ **Rencana** = belum diimplementasikan, jangan dipanggil.
+
+| Method | Endpoint | Akses | Status |
+|---|---|---|---|
+| `POST` | `/v1/auth/login` | Public | 🟢 Siap |
+| `POST` | `/v1/admin/masjid` | Admin | 🟢 Siap |
+| `GET` | `/v1/admin/masjid` | Admin | 🟢 Siap |
+| `GET` | `/v1/admin/masjid/:id_masjid` | Admin | 🟢 Siap |
+| `PATCH` | `/v1/admin/masjid/:id_masjid` | Admin | 🟢 Siap |
+| `DELETE` | `/v1/admin/masjid/:id_masjid` | Admin | 🟢 Siap |
+| `POST` | `/v1/admin/jadwal-sholat` | Admin | 🟢 Siap |
+| `GET` | `/v1/admin/jadwal-sholat` | Admin | 🟢 Siap |
+| `GET` | `/v1/admin/jadwal-sholat/:id_jadwal` | Admin | 🟢 Siap |
+| `PATCH` | `/v1/admin/jadwal-sholat/:id_jadwal` | Admin | 🟢 Siap |
+| `DELETE` | `/v1/admin/jadwal-sholat/:id_jadwal` | Admin | 🟢 Siap |
+| `POST` | `/v1/admin/mahasantri/:nim/reset-device` | Admin | 🟢 Siap |
+| `POST` | `/v1/presensi` | Mahasantri | 🟢 Siap |
+| `GET` | `/v1/presensi/hari-ini` | Mahasantri | 🟢 Siap (tahap 6) |
+| `GET` | `/v1/presensi/riwayat` | Mahasantri | ⚪ Rencana (tahap 6) |
+| `POST` | `/v1/izin` | Mahasantri | 🟢 Siap (tahap 7) |
+| `GET` | `/v1/izin/saya` | Mahasantri | 🟢 Siap (tahap 7) |
+| `POST` | `/v1/izin/lampiran` | Mahasantri | ⚪ Rencana (upload MinIO) |
+| `GET` | `/v1/musyrif/izin?status=Pending` | Musyrif | 🟢 Siap (tahap 7) |
+| `PATCH` | `/v1/musyrif/izin/:id_izin/verify` | Musyrif | 🟢 Siap (tahap 7) |
+| `POST` | `/v1/admin/jobs/tandai-tidak-hadir` | Admin | 🟢 Siap (tahap 8) |
+| `GET` | `/v1/musyrif/dss/santri-kritis` | Musyrif | 🟢 Siap (tahap 10) |
+| `GET` | `/v1/musyrif/presensi/monitoring` | Musyrif | 🟢 Siap (tahap 9) |
+| `GET` | `/v1/admin/activity-logs` | Admin | 🟢 Siap (tahap 11) |
+| `GET` | `/v1/musyrif/dashboard/tren-kehadiran?hari=7` | Musyrif | 🟢 Siap (tahap 12) |
+| `GET` | `/v1/admin/dashboard/tren-kehadiran?hari=7` | Admin | 🟢 Siap (tahap 12) |
+| `GET` | `/v1/admin/rekap` | Admin | 🟢 Siap (tahap 12) |
+
+## Format Respons
+
+Semua respons dibungkus interceptor, jadi bentuknya seragam.
+
+Sukses:
+```json
+{ "success": true, "statusCode": 200, "message": "Operasi berhasil", "data": {} }
+```
+`data` berisi payload yang sebenarnya (objek, array, atau `null`). `message` bisa berisi teks lebih spesifik tergantung endpoint.
+
+Gagal:
+```json
+{ "success": false, "statusCode": 404, "message": "Masjid tidak ditemukan", "error": "ERR_MASJID_NOT_FOUND" }
+```
+Baca `error` untuk menentukan penanganan; `message` untuk ditampilkan ke user.
+
+### Kode Error yang Perlu Dihadapi
+
+| `error` | HTTP | Penanganan di frontend |
+|---|---|---|
+| `ERR_VALIDATION` | 400 | Tampilkan `message` (sudah berisi daftar field yang gagal) |
+| `ERR_DEVICE_ID_REQUIRED` | 400 | Login Mahasantri tanpa `device_id`; kirim identitas perangkat |
+| `ERR_MOCK_LOCATION` | 400 | Lokasi dari mock/Fake GPS; minta user mematikan mock GPS |
+| `ERR_GPS_ACCURACY_LOW` | 400 | Akurasi GPS > 50 m; minta user pindah ke tempat terbuka lalu coba lagi |
+| `ERR_TIME_WINDOW_INVALID` | 400 | Di luar window presensi jadwal; tampilkan jadwal window yang benar |
+| `ERR_GEOFENCE_RADIUS_EXCEEDED` | 400 | User di luar radius masjid; `message` berisi jarak aktual |
+| `ERR_UNAUTHORIZED` | 401 | Token tidak ada/salah/kedaluwarsa → arahkan ke login |
+| `ERR_INVALID_CREDENTIALS` | 401 | Username atau password salah |
+| `ERR_DEVICE_MISMATCH` | 401 | Akun terikat perangkat lain → minta Admin melakukan reset device |
+| `ERR_ACCOUNT_INACTIVE` | 403 | Akun Mahasantri dinonaktifkan |
+| `ERR_FORBIDDEN_ROLE` | 403 | Role login tidak punya akses ke endpoint itu |
+| `ERR_NOT_YOUR_STUDENT` | 403 | Musyrif mencoba memverifikasi izin santri yang bukan binaannya |
+| `ERR_MASJID_NOT_FOUND` | 404 | Data masjid tidak ada |
+| `ERR_JADWAL_NOT_FOUND` | 404 | Data jadwal sholat tidak ada |
+| `ERR_MAHASANTRI_NOT_FOUND` | 404 | NIM tidak terdaftar |
+| `ERR_MUSYRIF_NOT_FOUND` | 404 | Token Musyrif tapi profil musyrif tidak ada di database |
+| `ERR_IZIN_NOT_FOUND` | 404 | ID izin tidak ada |
+| `ERR_IN_USE` | 409 | Masjid/jadwal masih dipakai presensi, tidak bisa dihapus |
+| `ERR_ALREADY_PRESENT` | 409 | Sudah presensi untuk jadwal yang sama hari ini |
+| `ERR_IZIN_ALREADY_DECIDED` | 409 | Izin sudah pernah diputuskan (state final), klik/kirim ulang tidak mengubah apa pun |
+| `ERR_TOO_MANY_REQUESTS` | 429 | Melewati rate limit → tunggu lalu coba lagi |
+| `ERR_INTERNAL` | 500 | Gangguan server → laporkan/coba lagi |
+
+## Autentikasi
+
+1. Login sekali untuk mendapat token:
+   ```bash
+   curl -X POST http://localhost:3000/v1/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"username":"mahasantri1","password":"12345678","device_id":"dev-a1b2c3"}'
+   ```
+2. Simpan `data.access_token`, lalu kirim di setiap request:
+   ```
+   Authorization: Bearer <access_token>
+   ```
+3. Token memakai masa berlaku dari `JWT_EXPIRES_IN` (default `7d`). Saat kedaluwarsa server membalas 401; arahkan user ke login ulang. Refresh token belum tersedia.
+
+### Login Per Role
+
+| Role | Kirim `device_id`? | `data.user.profil` |
+|---|---|---|
+| Mahasantri | **Wajib** — tanpa ini dibalas 400 `ERR_DEVICE_ID_REQUIRED` | objek `{ nim, nama, kamar, status_aktif, musyrif }` |
+| Musyrif | Tidak perlu (diabaikan) | objek `{ id_musyrif, nama, no_telepon }` |
+| Admin | Tidak perlu (diabaikan) | `null` |
+
+### Device Binding (khusus Mahasantri)
+
+- Perangkat pertama yang berhasil login mengikat akun (`device_id` disimpan di server).
+- Login dari perangkat lain pada akun yang sudah terikat dibalas 401 `ERR_DEVICE_MISMATCH`.
+- Untuk pindah perangkat, Admin memanggil `POST /v1/admin/mahasantri/:nim/reset-device`; setelah itu login dari perangkat baru otomatis mengikat perangkat baru.
+- `device_id` harus unik antar akun. Kalau device milik akun lain, server membalas `ERR_DEVICE_MISMATCH`.
+
+## Rate Limit
+
+| Endpoint | Batas (default) | Saat dilanggar |
+|---|---|---|
+| Semua endpoint | `THROTTLE_GLOBAL_LIMIT` request / 60 detik / IP (default 600) | 429 `ERR_TOO_MANY_REQUESTS` |
+| `POST /v1/auth/login` | `THROTTLE_LOGIN_LIMIT` percobaan / 60 detik / IP (default 20) | 429 `ERR_TOO_MANY_REQUESTS` |
+
+Batas memakai penanda `default` dengan penyimpanan in-memory, jadi reset saat server restart. Kedua nilai bisa dioverride lewat env (bilangan bulat > 0; nilai tidak valid jatuh ke default + `Logger.warn` di log server).
+
+## Catatan Master Data Admin
+
+Semua endpoint `/v1/admin/*` hanya untuk role Admin (selain itu 403 `ERR_FORBIDDEN_ROLE`).
+
+- **Masjid** — `nama_masjid` wajib (maks 150, bukan hanya spasi), `latitude` -90..90, `longitude` -180..180, `radius_toleransi` > 0 (meter).
+- **Jadwal Sholat** — `nama_sholat` wajib. Semua waktu wajib format `HH:mm` (24 jam, contoh `04:30`). `waktu_mulai_presensi` harus lebih kecil dari `waktu_akhir_presensi`. Aturan ini dievaluasi terhadap nilai gabungan dengan data tersimpan, jadi PATCH sebagian (hanya mengirim satu field waktu) tetap aman.
+- **PATCH** memakai `PartialType`: field yang tidak dikirim tetap seperti semula. Mengirim `null` ditolak 400.
+- **DELETE** bersifat hard delete, tapi ditolak 409 `ERR_IN_USE` bila masih dipakai data presensi. Saat fitur presensi sudah ada, jangan andalkan keberhasilan hapus tanpa menangani 409.
+- `whitelist` validasi aktif: field yang tidak dikenal di body dibuang diam-diam, bukan error.
+- Semua waktu shalat disimpan sebagai string `HH:mm` dalam WIB.
+
+## Catatan Presensi (`POST /v1/presensi`)
+
+- Hanya role Mahasantri. Kirim token; `nim` diambil dari token, tidak usah dimasukkan ke body.
+- Body wajib lengkap: `id_jadwal`, `id_masjid`, `latitude_user`, `longitude_user`, `akurasi_meter` (≥ 0), `is_mock_location` (boolean). Ambil koordinat dari Geolocation API (`getCurrentPosition`/`watchPosition`) beserta `accuracy` dan `fakeGps` (Android: `isFromMockProvider`) lalu kirim apa adanya — semua pengecekan di server.
+- Urutan penolakan server: mock location → akurasi > 50 m → jadwal/masjid tidak ada (404) → di luar jam presensi → di luar radius → dobel (409). Karena urut, kalau GPS palsu Anda tidak akan pernah tahu jarak/radiusnya.
+- Jam presensi memakai **jam server WIB**, bukan jam HP — jangan pernah membandingkan waktu sendiri di frontend untuk menentukan boleh presensi atau tidak; biarkan server yang menolak.
+- Respons sukses 201: `{ "status_presensi": "Hadir", "nama_sholat": "Subuh", "jarak_meter": 55.6 }`. `jarak_meter` dibulatkan 2 desimal, boleh ditampilkan sebagai bukti jarak; tidak dikirim balik ke server. `nama_sholat` adalah field tambahan sejak tahap 11 (nama jadwal yang dipakai) — aman ditampilkan sebagai konfirmasi shalat apa yang baru dicatat.
+- Satu presensi per jadwal per hari. Kalau user menekan tombol dua kali dan mendapat 409 `ERR_ALREADY_PRESENT`, anggap sebagai sukses (presensi pertama sudah tercatat).
+
+### Ringkasan Hari Ini (`GET /v1/presensi/hari-ini`, tahap 6)
+
+- Hanya role Mahasantri. Kirim token; `nim` diselesaikan di server.
+- Mengembalikan:
+  - `tanggal`: tanggal hari ini dalam format `YYYY-MM-DD` (WIB).
+  - `masjid`: data masjid utama (`id_masjid`, `nama_masjid`, `latitude`, `longitude`, `radius_toleransi`) atau `null` jika belum ada data masjid.
+  - `jadwal`: array 5 waktu shalat urut azan menaik. Tiap item memuat:
+    - `status`: `"Hadir"` | `"Tidak_Hadir"` | `"Izin"` | `"Manual"` | `"Belum"` (`"Belum"` jika belum ada baris presensi hari ini).
+    - `sedang_dalam_window`: boolean (true bila jam server WIB berada di dalam rentang waktu presensi, batas inklusif). Frontend dapat langsung menggunakan flag ini untuk mengaktifkan tombol "Presensi".
+
+
+## Catatan Izin (`POST /v1/izin`, `GET /v1/izin/saya`, `GET /v1/musyrif/izin`, `PATCH /v1/musyrif/izin/:id_izin/verify`)
+
+- **Ajukan (Mahasantri)** — kirim `jenis_izin` (`Sakit` | `Pulang` | `Tugas_Kampus`), `tanggal_izin` format `YYYY-MM-DD` (tanggal kalender valid; lampau diizinkan), `alasan` wajib maks 500 karakter. `bukti_lampiran` opsional string (object key, maks 255) — kirim saja tidak ada, `null` eksplisit ditolak 400. `id_musyrif` dan status `Pending` diisi server; jangan kirim `status_persetujuan` (dibuang whitelist).
+- **Respons `tanggal_izin`** selalu ISO datetime tengah-malam UTC (mis. `2026-10-05T00:00:00.000Z`); tampilkan 10 karakter pertamanya (`.slice(0, 10)`).
+- **Daftar sendiri** — `GET /v1/izin/saya` mengurutkan terbaru dulu (`tanggal_izin` menurun).
+- **Musyrif** — `GET /v1/musyrif/izin` hanya menampilkan izin santri binaan dan menyertakan `nama_mahasantri`; respons Mahasantri tidak punya field itu. Filter `?status=Pending|Disetujui|Ditolak` opsional; nilai lain → 400.
+- **Verifikasi** — hanya `Disetujui`/`Ditolak` (kirim `Pending` → 400). Urutan respons: 404 `ERR_IZIN_NOT_FOUND` (ID tak ada) → 403 `ERR_NOT_YOUR_STUDENT` (bukan pembina) → 409 `ERR_IZIN_ALREADY_DECIDED` (sudah diputuskan).
+- **Setelah keputusan, izin final** — tombol verifikasi matikan di UI setelah 200. Dua klik/dua request bersamaan tidak merusak apa pun: server hanya mengizinkan perubahan lewat update bersyarat pada status `Pending`, jadi hanya satu yang menang; sisanya 409. Bila mendapat 409, refresh daftar — status sebenarnya sudah berubah.
+- **Belum ada upload lampiran** — `POST /v1/izin/lampiran` (MinIO) masih rencana; endpoint `POST /v1/izin` tidak menerima file/multipart, hanya string object key.
+
+## Catatan Job Tidak_Hadir (BR-05)
+
+- Frontend **tidak perlu melakukan apa pun**: server menandai otomatis sendiri. Setelah `waktu_akhir_presensi` sebuah shalat lewat (zona Asia/Jakarta), Mahasantri aktif yang belum presensi pada jadwal itu mendapat baris Presensi `Tidak_Hadir` — atau `Izin` bila ada Izin `Disetujui` pada tanggal itu.
+- `POST /v1/admin/jobs/tandai-tidak-hadir` (Admin, body opsional `{ tanggal, id_jadwal }`) hanya untuk pemicu manual/demo atau backfill tanggal terlewat; hasilnya `dibuat: { Tidak_Hadir, Izin }`. Idempoten — dipanggil berkali-kali aman dan tidak menimpa `Hadir`.
+- **Baris otomatis tidak punya lokasi asli**: `latitude_user`/`longitude_user` = `0`, `id_masjid` = masjid utama. Saat menampilkan riwayat/presensi, jangan menampilkan koordinat atau hitung jarak untuk status `Tidak_Hadir`/`Izin` — cukup tampilkan statusnya.
+
+## Catatan DSS & EWS (`GET /v1/musyrif/dss/santri-kritis`)
+
+- Hanya Mahasantri binaan Musyrif yang **masih aktif** yang dinilai; respons bisa `[]` (tidak ada yang kritis) — tampilkan empty state, bukan error.
+- Respons memuat `kategori_risiko: "KRITIS"`, `rasio_kehadiran` (persen 1 desimal), `streak_alpha`, `jumlah: { hadir, tidak_hadir, izin }`, `alasan` (`"rasio"` dan/atau `"streak"`), dan `rekomendasi_tindakan` (teks dari server — tampilkan apa adanya, jangan susun sendiri).
+- Urutan sudah dihitung server: rasio paling rendah dulu. Periode penilaian = `DSS_PERIODE_HARI` hari terakhir termasuk hari ini (WIB, default 30); hari tanpa baris presensi (mis. server sempat mati dan belum di-backfill) tidak dihitung sebagai alpha — backfill via `POST /v1/admin/jobs/tandai-tidak-hadir`.
+- Data `jumlah` dipakai untuk menampilkan pecahan (mis. "8 dari 11 hari terhitung hadir"); `Izin` tidak mengurangi skor dan bukan alpha.
+
+## Catatan Monitoring (`GET /v1/musyrif/presensi/monitoring`, tahap 9)
+
+- Hanya **Musyrif** (Admin pun dapat 403) dan hanya **santri binaan dengan `status_aktif = true`** — tidak perlu filter lagi di frontend; santri Musyrif lain tidak pernah muncul.
+- Query `tanggal` (`YYYY-MM-DD`, default hari ini WIB dihitung server). **Tanggal masa depan ditolak 400** — jadi date picker sebaiknya membatasi maksimal hari ini. Tanggal lampau diperbolehkan untuk melihat riwayat.
+- Bentuk `data`: `{ tanggal, jadwal, ringkasan, santri }` — bukan array. Render sebagai tabel: kolom = `jadwal` (urut azan menaik), baris = `santri` (urut `nim` menaik), sel = `santri[i].status[j].status` (urutan `status` mengikuti urutan `jadwal`).
+- Nilai sel: `Hadir` | `Tidak_Hadir` | `Izin` | `Manual` | `"Belum"`. **`"Belum"` bukan error** — artinya belum ada baris presensi (termasuk shalat yang window-nya belum lewat); jangan langsung menandai santri bolos.
+- `ringkasan` = jumlah **sel** (santri × jadwal) per status, bukan jumlah santri; totalnya selalu `len(santri) × len(jadwal)` — cocok untuk baris "Hadir 8 · Izin 1 · Tidak_Hadir 2 · Belum 4 dari 15 slot".
+- Bisa berupa `santri: []` (Musyrif belum punya binaan aktif) — tampilkan empty state, bukan error. `ringkasan` semua 0 saat itu.
+- Data presensi otomatis (hasil cron) ikut tampil sebagai `Tidak_Hadir`/`Izin` — tidak ada pembedaan tampilan dengan presensi asli.
+
+## Catatan Activity Log (`GET /v1/admin/activity-logs`, BR-11)
+
+- **Hanya Admin**; **hanya-baca** — tidak ada endpoint menambah, mengubah, atau menghapus log (append-only). Memanggil endpoint GET ini juga tidak menciptakan log baru (GET tidak pernah dicatat).
+- Respons **bukan array**: baca `data.logs` (array) dan `data.pagination` (`{ page, limit, total, total_pages }`) — bukan `data` langsung seperti kebanyakan endpoint lain.
+- Filter query (semua opsional, exact match): `role` (`Mahasantri`|`Musyrif`|`Admin`), `username`, `modul` (`Auth`|`Presensi`|`Izin`|`Masjid`|`Jadwal`|`Mahasantri`|`Jobs`), `from`/`to` (format `YYYY-MM-DD`, **sudah dihitung server dalam WIB** — `from` = sejak awal hari itu WIB, `to` = sampai akhir hari itu WIB), `page` (mulai 1, default 1), `limit` (default 20, maksimum 100). Nilai tidak valid → 400 `ERR_VALIDATION` (mis. `limit=101`, `page=0`, `role=Kasir`).
+- Urutan selalu terbaru dulu; `page` di luar jangkauan → `logs: []` (bukan error). Tampilkan `total_pages` untuk komponen paginasi.
+- `created_at` dikirim UTC — konversi ke WIB untuk ditampilkan (`+7 jam`), atau gunakan filter `from`/`to` untuk logika "hari".
+- Teks `aktivitas` sudah disusun server, maksimum 500 karakter — **tampilkan apa adanya** (contoh: `Presensi Subuh berhasil, jarak 23 m`, `Memverifikasi izin 24050505050 menjadi Disetujui`, `Pemicu manual job tandai-tidak-hadir 2026-10-18: Tidak_Hadir 5, Izin 1 (total 6)`). Untuk UPDATE/DELETE, teks memakai `id`, bukan nama (lihat API_CONTRACT).
+- Aktivitas **tercatat otomatis** untuk: login (sukses **dan** gagal), presensi, pengajuan/verifikasi izin, Masjid & Jadwal buat/ubah/hapus, reset device, dan pemicu job manual. Aksi baru di luar daftar itu **tidak otomatis tercatat** — harus ditambahkan `@Audit` di route.
+- Tidak pernah ada nilai password/token/`device_id` di kolom mana pun — aman dirender langsung.
+
+## Catatan Dashboard & Rekap (tahap 12)
+
+### Tren kehadiran (`GET /v1/musyrif/dashboard/tren-kehadiran?hari=7` dan `/v1/admin/dashboard/tren-kehadiran?hari=7`)
+
+- Query `hari` opsional, default 7, maksimal 30. Rentang = `hari` terakhir termasuk hari ini (WIB).
+- Respons **bukan array**: baca `data.data` (array harian), `data.hari`, `data.tanggal_mulai`, `data.tanggal_akhir`.
+- Setiap hari dalam rentang selalu muncul, termasuk hari tanpa data (semua status 0, `persen_hadir` null).
+- `persen_hadir = hadir / (hadir + tidak_hadir) × 100`, satu desimal. `Izin` dikecualikan dari penyebut, `Manual` dihitung hadir. `null` bila penyebut 0.
+- Endpoint Musyrif hanya menampilkan santri **binaan aktif**; endpoint Admin menampilkan **semua santri aktif**.
+- Urutan data: tanggal menaik.
+
+### Rekap admin (`GET /v1/admin/rekap`)
+
+- Hanya Admin. Tidak ada query parameter.
+- `jumlah_santri_aktif` = jumlah Mahasantri dengan `status_aktif = true`.
+- `presensi` = jumlah baris presensi per status dalam periode rekap (`REKAP_PERIODE_HARI`, default 30 hari).
+- `izin` = jumlah izin per status persetujuan (`Pending`, `Disetujui`, `Ditolak`).
+- `jumlah_santri_kritis` = jumlah santri berkategori KRITIS menurut fungsi DSS yang sama dengan `GET /v1/musyrif/dss/santri-kritis`.
