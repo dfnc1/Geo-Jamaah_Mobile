@@ -10,6 +10,8 @@ import '../../features/mahasantri/presentation/mahasantri_izin_placeholder.dart'
 import '../../features/mahasantri/presentation/mahasantri_profil_screen.dart';
 import '../../features/mahasantri/presentation/mahasantri_shell.dart';
 import '../../features/musyrif/presentation/musyrif_home_placeholder.dart';
+import '../../features/presensi/presentation/presensi_controller.dart';
+import '../../features/presensi/presentation/presensi_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 
 /// Provider GoRouter terintegrasi dengan status autentikasi Riverpod.
@@ -64,6 +66,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin',
         builder: (context, state) => const AdminPlaceholderScreen(),
+      ),
+      // Rute presensi — di luar shell tab agar navigasi bawah tersembunyi
+      GoRoute(
+        path: '/mahasantri/presensi',
+        builder: (context, state) {
+          // Args diteruskan lewat extra (objek PresensiArgs)
+          final args = state.extra as PresensiArgs?;
+          if (args == null) {
+            // Fallback: tidak seharusnya terjadi, kembali ke beranda
+            return const MahasantriBerandaScreen();
+          }
+          return PresensiScreen(args: args);
+        },
       ),
     ],
     redirect: (context, state) {

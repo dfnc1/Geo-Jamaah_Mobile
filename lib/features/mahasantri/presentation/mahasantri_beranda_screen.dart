@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_banner.dart';
@@ -8,6 +9,7 @@ import '../../../core/widgets/loading_view.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../presensi/presentation/presensi_controller.dart';
 import '../domain/presensi_hari_ini_model.dart';
 import 'beranda_controller.dart';
 
@@ -79,14 +81,55 @@ class _MahasantriBerandaScreenState extends ConsumerState<MahasantriBerandaScree
     _pollingTimer = null;
   }
 
-  void _onPresensiPressed(BuildContext context, JadwalHariIniModel jadwal) {
-    // TODO(M4): Buka layar presensi geofencing kamera/lokasi di Milestone 4
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Presensi segera hadir (${jadwal.namaSholat})'),
-        duration: const Duration(seconds: 2),
-      ),
+  Future<void> _onPresensiPressed(
+    JadwalHariIniModel jadwal,
+    BerandaState berandaState,
+  ) async {
+    final masjid = berandaState.data?.masjid;
+    if (masjid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Data masjid belum tersedia. Hubungi Admin untuk mengatur masjid.',
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    final args = PresensiArgs(
+      idJadwal: jadwal.idJadwal,
+      namaSholat: jadwal.namaSholat,
+      idMasjid: masjid.idMasjid,
+      namaMasjid: masjid.namaMasjid,
+      latitude: masjid.latitude,
+      longitude: masjid.longitude,
+      radiusToleransi: masjid.radiusToleransi,
     );
+
+    // Navigasi ke layar presensi di luar shell tab.
+    // Saat kembali (pop) dengan nilai true = presensi berhasil → refresh beranda.
+    final berhasil = await context.push<bool>(
+      '/mahasantri/presensi',
+      extra: args,
+    );
+
+    if (!mounted) return;
+
+    // Refresh beranda setelah kembali dari layar presensi agar status diperbarui
+    ref.read(berandaControllerProvider.notifier).refreshSilently();
+
+    // Tampilkan konfirmasi jika berhasil
+    if (berhasil == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Presensi berhasil dicatat!'),
+          backgroundColor: AppColors.success,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override
@@ -207,7 +250,7 @@ class _MahasantriBerandaScreenState extends ConsumerState<MahasantriBerandaScree
             ...data.jadwal.map(
               (jadwal) => _JadwalCard(
                 jadwal: jadwal,
-                onPresensiPressed: () => _onPresensiPressed(context, jadwal),
+                onPresensiPressed: () => _onPresensiPressed(jadwal, state),
               ),
             ),
           const SizedBox(height: 16),
