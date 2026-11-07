@@ -15,7 +15,7 @@ memperbarui tabel status di bawah pada commit yang sama dengan kodenya.
 | M5 | Izin Mahasantri | ✅ | ⬜ |
 | M6 | Musyrif: verifikasi izin | ✅ | ⬜ |
 | M7 | Musyrif: santri kritis, monitoring, grafik | ✅ | ⬜ |
-| M8 | Perapian dan dokumentasi build | ⬜ | ⬜ |
+| M8 | Perapian dan dokumentasi build | ✅ | ⬜ |
 
 Kolom "Tes di perangkat" HANYA diubah oleh pemilik proyek (aku), bukan
 agent.
