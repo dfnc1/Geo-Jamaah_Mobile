@@ -6,7 +6,7 @@ import '../../features/auth/domain/auth_state.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/mahasantri/presentation/mahasantri_beranda_screen.dart';
-import '../../features/mahasantri/presentation/mahasantri_izin_placeholder.dart';
+import '../../features/mahasantri/presentation/izin_screen.dart';
 import '../../features/mahasantri/presentation/mahasantri_profil_screen.dart';
 import '../../features/mahasantri/presentation/mahasantri_shell.dart';
 import '../../features/musyrif/presentation/musyrif_home_placeholder.dart';
@@ -45,7 +45,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/mahasantri/izin',
-                builder: (context, state) => const MahasantriIzinPlaceholder(),
+                builder: (context, state) => const IzinScreen(),
               ),
             ],
           ),
