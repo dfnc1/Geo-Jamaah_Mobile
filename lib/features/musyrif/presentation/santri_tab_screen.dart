@@ -376,10 +376,9 @@ class _MonitoringSection extends ConsumerWidget {
             ErrorBanner(
               title: 'Gagal Memuat Monitoring',
               message: state.errorMessage!,
-              onRetry: () => state.tanggalMonitoring != null
-                  ? controller
-                      .gantiTanggalMonitoring(state.tanggalMonitoring!)
-                  : controller.loadKritis(),
+              onRetry: () => controller.gantiTanggalMonitoring(
+                state.tanggalMonitoring ?? DateTime.now(),
+              ),
             ),
             const SizedBox(height: 20),
             PrimaryButton(
@@ -934,6 +933,11 @@ class _LinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _LinePainter oldDelegate) =>
-      oldDelegate.data != data;
+  bool shouldRepaint(covariant _LinePainter oldDelegate) {
+    if (oldDelegate.data.length != data.length) return true;
+    for (int i = 0; i < data.length; i++) {
+      if (oldDelegate.data[i] != data[i]) return true;
+    }
+    return false;
+  }
 }

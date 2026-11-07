@@ -120,9 +120,6 @@ class PresensiArgs {
   });
 }
 
-/// Provider args presensi — diisi oleh beranda sebelum navigasi.
-final presensiArgsProvider = StateProvider<PresensiArgs?>((ref) => null);
-
 final presensiControllerProvider =
     StateNotifierProvider.autoDispose<PresensiController, PresensiState>((ref) {
   final repository = ref.watch(presensiRepositoryProvider);

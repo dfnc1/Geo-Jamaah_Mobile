@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/app_exception/app_exception.dart';
+import '../../../core/error_mapper.dart';
 import '../data/izin_repository.dart';
 import '../domain/izin_error_mapper.dart';
 import '../domain/izin_model.dart';
@@ -111,18 +112,7 @@ class IzinController extends StateNotifier<IzinState> {
       if (error.status == 401) {
         return ''; // Ditangani oleh global onLogout
       }
-      if (error.status == 403) {
-        return 'Akses ditolak: Anda tidak memiliki izin untuk mengajukan izin.';
-      }
-      if (error.code == 'ERR_CONNECTION' ||
-          error.code == 'ERR_NETWORK' ||
-          error.code == 'ERR_TIMEOUT') {
-        return 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
-      }
-      if (error.message.isNotEmpty) {
-        return error.message;
-      }
     }
-    return 'Terjadi kesalahan saat memuat data izin. Silakan coba lagi.';
+    return mapAppException(error);
   }
 }
