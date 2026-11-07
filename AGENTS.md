@@ -24,9 +24,10 @@ Aturan:
 - Jangan membaca atau mencetak isi .env. Jangan menjalankan perintah yang
   menghapus data (migrate reset, db push --force-reset, docker compose
   down -v) tanpa izin.
-- Pakai pnpm. Jawab dalam Bahasa Indonesia.
-- Jangan commit. Saya yang commit. Sarankan pesan commit Conventional
-  Commits di akhir pekerjaan.
+- Pakai pnpm. Jawab dalam Bahasa Indonesia. 
+- Commit dilakukan agent per tahap sesuai docs/MOBILE_PLAN.md 
+  (Conventional Commits, subject Inggris, huruf kecil), tanpa push.
+  Kalau AGENTS.md dan MOBILE_PLAN.md berbeda, MOBILE_PLAN.md yang berlaku.
 - Setelah selesai, jelaskan singkat setiap file yang dibuat atau diubah
   dan alasannya, supaya saya bisa menjelaskannya saat demo. Untuk logika
   inti (Haversine, window time, double presensi, state machine izin, EWS,
@@ -35,8 +36,10 @@ Aturan:
 ## Aturan commit dan kebersihan (berlaku setiap tahap)
 - Satu tahap = satu atau beberapa commit kecil, selesai di sesi yang
   sama. Jangan memulai tahap baru dengan perubahan yang belum ter-commit.
-- Sebelum commit: git status, pnpm build, pnpm lint, pnpm test. Jangan
+- Sebelum commit: git status, flutter analyze, flutter test. Jangan
   commit jika salah satu gagal.
+- Agent boleh dan harus commit per tahap sesuai MOBILE_PLAN.md (tanpa
+  push).
 - Dokumen yang terdampak (API_CONTRACT.md, FRONTEND_GUIDE.md, README.md,
   CODE_REVIEW.md) diperbarui di commit yang sama dengan kodenya.
 - Data uji manual wajib berawalan "Tes" (contoh: "Masjid Tes Tahap 5")
@@ -60,3 +63,8 @@ Aturan:
   prisma/schema.prisma, (3) perlu menghapus data selain data uji.
 - Laporan akhir: asumsi yang diambil, file berubah, hasil test dan
   build, skenario curl, data uji yang dibersihkan, saran pesan commit.
+
+
+- Jangan menjalankan flutter pub get, flutter clean, atau flutter run
+  (Flutter Windows dipakai oleh IDE). Cukup flutter analyze dan
+  flutter test, dan minta aku menjalankan pub get bila dependensi berubah.
