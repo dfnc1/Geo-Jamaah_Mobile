@@ -12,7 +12,7 @@ import '../../features/mahasantri/presentation/mahasantri_shell.dart';
 import '../../features/musyrif/presentation/izin_musyrif_screen.dart';
 import '../../features/musyrif/presentation/musyrif_profil_screen.dart';
 import '../../features/musyrif/presentation/musyrif_shell.dart';
-import '../../features/musyrif/presentation/santri_placeholder_screen.dart';
+import '../../features/musyrif/presentation/santri_tab_screen.dart';
 import '../../features/presensi/presentation/presensi_controller.dart';
 import '../../features/presensi/presentation/presensi_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
@@ -79,7 +79,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/musyrif/santri',
-                builder: (context, state) => const SantriPlaceholderScreen(),
+                builder: (context, state) => const SantriTabScreen(),
               ),
             ],
           ),
