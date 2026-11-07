@@ -9,6 +9,8 @@ import 'package:geo_jamaah/features/auth/presentation/auth_controller.dart';
 import 'package:geo_jamaah/features/mahasantri/data/mahasantri_repository.dart';
 import 'package:geo_jamaah/features/mahasantri/domain/presensi_hari_ini_model.dart';
 import 'package:geo_jamaah/features/mahasantri/presentation/beranda_controller.dart';
+import 'package:geo_jamaah/features/musyrif/data/izin_musyrif_repository.dart';
+import 'fake_izin_musyrif_repository.dart';
 import 'api_client_test.dart';
 import 'auth_controller_test.dart';
 
@@ -51,12 +53,21 @@ void main() {
     fakeMahasantriRepository = FakeMahasantriRepository(apiClient: fakeApiClient);
   });
 
-  Widget buildTestApp({required AuthController controller}) {
+  Widget buildTestApp({
+    required AuthController controller,
+    IzinMusyrifRepository? izinMusyrifRepo,
+  }) {
     return ProviderScope(
       overrides: [
         authControllerProvider.overrideWith((ref) => controller),
         mahasantriRepositoryProvider.overrideWithValue(fakeMahasantriRepository),
         berandaPollingIntervalProvider.overrideWithValue(null),
+        izinMusyrifRepositoryProvider.overrideWithValue(
+          izinMusyrifRepo ??
+              FakeIzinMusyrifRepository(
+                apiClient: ApiClient(tokenStore: FakeTokenStore()),
+              ),
+        ),
       ],
       child: Consumer(
         builder: (context, ref, _) {
@@ -145,9 +156,9 @@ void main() {
       await tester.pumpWidget(buildTestApp(controller: controller));
       await tester.pumpAndSettle();
 
-      expect(find.text('Portal Musyrif'), findsOneWidget);
-      expect(find.text('Ustadz Ahmad'), findsOneWidget);
-      expect(find.text('Kontak: 08123456789'), findsOneWidget);
+      expect(find.text('Izin Santri Binaan'), findsOneWidget);
+      expect(find.text('Pending'), findsOneWidget);
+      expect(find.text('Semua'), findsOneWidget);
     });
 
     testWidgets('peran Admin diarahkan ke halaman belum tersedia /admin', (tester) async {

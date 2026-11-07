@@ -13,7 +13,7 @@ memperbarui tabel status di bawah pada commit yang sama dengan kodenya.
 | M3 | Beranda dan profil Mahasantri | ✅ | ⬜ |
 | M4 | Presensi (lokasi, deteksi lokasi palsu) | ✅ | ⬜ |
 | M5 | Izin Mahasantri | ✅ | ⬜ |
-| M6 | Musyrif: verifikasi izin | ⬜ | ⬜ |
+| M6 | Musyrif: verifikasi izin | ✅ | ⬜ |
 | M7 | Musyrif: santri kritis, monitoring, grafik | ⬜ | ⬜ |
 | M8 | Perapian dan dokumentasi build | ⬜ | ⬜ |
 

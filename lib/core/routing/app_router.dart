@@ -9,7 +9,10 @@ import '../../features/mahasantri/presentation/mahasantri_beranda_screen.dart';
 import '../../features/mahasantri/presentation/izin_screen.dart';
 import '../../features/mahasantri/presentation/mahasantri_profil_screen.dart';
 import '../../features/mahasantri/presentation/mahasantri_shell.dart';
-import '../../features/musyrif/presentation/musyrif_home_placeholder.dart';
+import '../../features/musyrif/presentation/izin_musyrif_screen.dart';
+import '../../features/musyrif/presentation/musyrif_profil_screen.dart';
+import '../../features/musyrif/presentation/musyrif_shell.dart';
+import '../../features/musyrif/presentation/santri_placeholder_screen.dart';
 import '../../features/presensi/presentation/presensi_controller.dart';
 import '../../features/presensi/presentation/presensi_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
@@ -59,9 +62,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(
-        path: '/musyrif',
-        builder: (context, state) => const MusyrifHomePlaceholder(),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MusyrifShell(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/musyrif',
+                builder: (context, state) => const IzinMusyrifScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/musyrif/santri',
+                builder: (context, state) => const SantriPlaceholderScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/musyrif/profil',
+                builder: (context, state) => const MusyrifProfilScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: '/admin',

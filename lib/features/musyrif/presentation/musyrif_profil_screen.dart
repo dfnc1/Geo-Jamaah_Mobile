@@ -4,28 +4,51 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
 
-/// Halaman placeholder Musyrif yang menampilkan nama pembina dan tombol Keluar.
-class MusyrifHomePlaceholder extends ConsumerWidget {
-  const MusyrifHomePlaceholder({super.key});
+/// Halaman Profil Musyrif.
+/// Menampilkan nama dan nomor telepon dari data user tersimpan,
+/// serta tombol Keluar dengan konfirmasi.
+class MusyrifProfilScreen extends ConsumerWidget {
+  const MusyrifProfilScreen({super.key});
+
+  Future<void> _konfirmasiKeluar(BuildContext context, WidgetRef ref) async {
+    final yakin = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Keluar'),
+        content: const Text('Anda yakin ingin keluar dari aplikasi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Batal'),
+          ),
+          PrimaryButton(
+            label: 'Keluar',
+            isOutlined: true,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (yakin == true && context.mounted) {
+      await ref.read(authControllerProvider.notifier).logout();
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authControllerProvider).user;
-    final nama = user?.displayName ?? 'Ustadz / Musyrif';
-    final noTelp = user?.profil?['no_telepon']?.toString() ?? '-';
+    final authState = ref.watch(authControllerProvider);
+    final user = authState.user;
+    final profil = user?.profil;
+
+    final nama = profil?['nama']?.toString() ??
+        user?.displayName ??
+        'Musyrif';
+    final noTelp = profil?['no_telepon']?.toString() ?? '-';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Portal Musyrif'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Keluar',
-            onPressed: () {
-              ref.read(authControllerProvider.notifier).logout();
-            },
-          ),
-        ],
+        title: const Text('Profil Musyrif'),
+        automaticallyImplyLeading: false,
       ),
       body: SafeArea(
         child: Padding(
@@ -65,26 +88,16 @@ class MusyrifHomePlaceholder extends ConsumerWidget {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      const StatusBadge(status: 'Disetujui', small: true),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              const InfoBanner(
-                title: 'Portal Pembina Musyrif',
-                message:
-                    'Fitur monitoring presensi santri binaan, verifikasi izin, dan Early Warning System (EWS) akan hadir.',
-              ),
-              const Spacer(),
+              const SizedBox(height: 24),
               PrimaryButton(
                 label: 'Keluar',
                 icon: Icons.logout,
                 isOutlined: true,
-                onPressed: () {
-                  ref.read(authControllerProvider.notifier).logout();
-                },
+                onPressed: () => _konfirmasiKeluar(context, ref),
               ),
             ],
           ),
