@@ -4,7 +4,7 @@ import 'package:geo_jamaah/features/presensi/domain/presensi_error_mapper.dart';
 
 void main() {
   group('PresensiErrorMapper - Pemetaan Seluruh Kode Error ke Pesan Ramah', () {
-    test('ERR_GEOFENCE_RADIUS_EXCEEDED memetakan pesan jarak aktual atau default', () {
+    test('ERR_GEOFENCE_RADIUS_EXCEEDED memetakan pesan tetap (bukan message server mentah)', () {
       const errWithMsg = AppException(
         code: 'ERR_GEOFENCE_RADIUS_EXCEEDED',
         message: 'Jarak Anda 120.5 m dari masjid, melebihi radius 100 m',
@@ -12,7 +12,7 @@ void main() {
       );
       expect(
         PresensiErrorMapper.map(errWithMsg),
-        'Jarak Anda 120.5 m dari masjid, melebihi radius 100 m',
+        'Anda berada di luar radius area masjid yang diizinkan.',
       );
 
       const errDefault = AppException(
@@ -26,7 +26,7 @@ void main() {
       );
     });
 
-    test('ERR_TIME_WINDOW_INVALID memetakan pesan waktu di luar rentang', () {
+    test('ERR_TIME_WINDOW_INVALID memetakan pesan tetap (bukan message server mentah)', () {
       const err = AppException(
         code: 'ERR_TIME_WINDOW_INVALID',
         message: 'Di luar window presensi shalat',
@@ -34,7 +34,7 @@ void main() {
       );
       expect(
         PresensiErrorMapper.map(err),
-        'Di luar window presensi shalat',
+        'Saat ini berada di luar rentang waktu presensi untuk jadwal shalat ini.',
       );
 
       const errEmpty = AppException(

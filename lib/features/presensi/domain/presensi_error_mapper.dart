@@ -26,19 +26,9 @@ class PresensiErrorMapper {
       // 3. Error Bisnis Presensi Spesifik
       switch (code) {
         case 'ERR_GEOFENCE_RADIUS_EXCEEDED':
-          if (error.message.isNotEmpty &&
-              !error.message.startsWith('ERR_') &&
-              error.message.toLowerCase().contains('jarak')) {
-            return error.message;
-          }
           return 'Anda berada di luar radius area masjid yang diizinkan.';
 
         case 'ERR_TIME_WINDOW_INVALID':
-          if (error.message.isNotEmpty &&
-              !error.message.startsWith('ERR_') &&
-              error.message.toLowerCase().contains('window')) {
-            return error.message;
-          }
           return 'Saat ini berada di luar rentang waktu presensi untuk jadwal shalat ini.';
 
         case 'ERR_MOCK_LOCATION':
@@ -69,12 +59,6 @@ class PresensiErrorMapper {
           return 'Data profil Mahasantri Anda tidak ditemukan.';
 
         default:
-          // Jika ada pesan ramah dari server yang bukan kode mentah
-          if (error.message.isNotEmpty &&
-              !error.message.startsWith('ERR_') &&
-              !error.message.contains('{')) {
-            return error.message;
-          }
           return 'Terjadi kesalahan pada server. Silakan coba lagi nanti.';
       }
     }

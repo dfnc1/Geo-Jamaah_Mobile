@@ -34,7 +34,7 @@ void main() {
       expect(
         errorInfo.message,
         equals(
-          'Login Ditolak: Akun Anda sudah terikat pada perangkat smartphone lain. Hubungi Admin untuk reset Device ID.',
+          'Login ditolak: akun ini atau perangkat ini sudah terikat. Hubungi Admin untuk reset Device ID.',
         ),
       );
       expect(errorInfo.isDeviceMismatch, isTrue);

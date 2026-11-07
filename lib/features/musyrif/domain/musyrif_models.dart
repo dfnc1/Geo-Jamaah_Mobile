@@ -212,7 +212,7 @@ class MonitoringResponse {
 
     final rawRingkasan = json['ringkasan'];
     final ringkasan = rawRingkasan is Map
-        ? MonitoringRingkasan.fromJson(rawRingkasan as Map<String, dynamic>)
+        ? MonitoringRingkasan.fromJson(Map<String, dynamic>.from(rawRingkasan))
         : const MonitoringRingkasan(
             hadir: 0, tidakHadir: 0, izin: 0, manual: 0, belum: 0);
 

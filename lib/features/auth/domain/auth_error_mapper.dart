@@ -37,7 +37,7 @@ class AuthErrorMapper {
         return const AuthErrorInfo(
           title: 'Perangkat tidak sesuai',
           message:
-              'Login Ditolak: Akun Anda sudah terikat pada perangkat smartphone lain. Hubungi Admin untuk reset Device ID.',
+              'Login ditolak: akun ini atau perangkat ini sudah terikat. Hubungi Admin untuk reset Device ID.',
           isDeviceMismatch: true,
         );
       case 'ERR_ACCOUNT_INACTIVE':
