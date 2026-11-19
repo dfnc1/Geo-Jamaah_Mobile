@@ -71,7 +71,11 @@ class IzinMusyrifController extends StateNotifier<IzinMusyrifState> {
 
   /// Ganti filter dan muat ulang daftar.
   Future<void> gantiFilter(IzinFilterMusyrif filterBaru) async {
-    state = state.copyWith(filter: filterBaru);
+    state = state.copyWith(
+      filter: filterBaru,
+      daftarIzin: const [],
+      clearError: true,
+    );
     await loadIzinBinaan();
   }
 

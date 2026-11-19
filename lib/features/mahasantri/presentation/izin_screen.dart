@@ -206,6 +206,19 @@ class _IzinScreenState extends ConsumerState<IzinScreen> {
               ),
               const SizedBox(height: 12),
 
+              if (izinState.errorMessage != null &&
+                  izinState.errorMessage!.isNotEmpty &&
+                  izinState.daftarIzin.isNotEmpty) ...[
+                ErrorBanner(
+                  title: 'Pemberitahuan',
+                  message: izinState.errorMessage!,
+                  onDismiss: () => ref
+                      .read(izinControllerProvider.notifier)
+                      .clearError(),
+                ),
+                const SizedBox(height: 12),
+              ],
+
               if (izinState.isLoading && izinState.daftarIzin.isEmpty)
                 const LoadingView(message: 'Memuat daftar izin...')
               else if (izinState.errorMessage != null &&

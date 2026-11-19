@@ -16,11 +16,14 @@ class StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = _getConfig(status);
+    final displayLabel = (small && config.label == 'Tidak Hadir')
+        ? 'T. Hadir'
+        : config.label;
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: small ? 8 : 10,
-        vertical: small ? 3 : 5,
+        horizontal: small ? 6 : 10,
+        vertical: small ? 2.5 : 5,
       ),
       decoration: BoxDecoration(
         color: config.color.withValues(alpha: 0.1),
@@ -35,14 +38,14 @@ class StatusBadge extends StatelessWidget {
         children: [
           Icon(
             config.icon,
-            size: small ? 12 : 14,
+            size: small ? 11 : 14,
             color: config.color,
           ),
           const SizedBox(width: 4),
           Text(
-            config.label,
+            displayLabel,
             style: TextStyle(
-              fontSize: small ? 11 : 12,
+              fontSize: small ? 10.5 : 12,
               fontWeight: FontWeight.w600,
               color: config.color,
             ),

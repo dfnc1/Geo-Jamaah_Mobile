@@ -115,25 +115,28 @@ class _KritisSection extends ConsumerWidget {
       return const LoadingView(message: 'Memuat data santri kritis...');
     }
 
-    if (state.errorMessage != null &&
-        state.errorMessage!.isNotEmpty &&
+    if (state.errorKritis != null &&
+        state.errorKritis!.isNotEmpty &&
         state.daftarKritis.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ErrorBanner(
-              title: 'Gagal Memuat Data Kritis',
-              message: state.errorMessage!,
-              onRetry: () => controller.loadKritis(),
-            ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              label: 'Coba Lagi',
-              icon: Icons.refresh,
-              onPressed: () => controller.loadKritis(),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ErrorBanner(
+                title: 'Gagal Memuat Data Kritis',
+                message: state.errorKritis!,
+                onRetry: () => controller.loadKritis(),
+              ),
+              const SizedBox(height: 16),
+              PrimaryButton(
+                label: 'Coba Lagi',
+                icon: Icons.refresh,
+                onPressed: () => controller.loadKritis(),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -306,27 +309,32 @@ class _KritisStat extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: AppColors.slate),
-              const SizedBox(width: 6),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+              Icon(icon, size: 15, color: AppColors.slate),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: AppColors.textSecondary,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -366,30 +374,33 @@ class _MonitoringSection extends ConsumerWidget {
       return const LoadingView(message: 'Memuat monitoring...');
     }
 
-    if (state.errorMessage != null &&
-        state.errorMessage!.isNotEmpty &&
+    if (state.errorMonitoring != null &&
+        state.errorMonitoring!.isNotEmpty &&
         state.monitoring == null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ErrorBanner(
-              title: 'Gagal Memuat Monitoring',
-              message: state.errorMessage!,
-              onRetry: () => controller.gantiTanggalMonitoring(
-                state.tanggalMonitoring ?? DateTime.now(),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ErrorBanner(
+                title: 'Gagal Memuat Monitoring',
+                message: state.errorMonitoring!,
+                onRetry: () => controller.gantiTanggalMonitoring(
+                  state.tanggalMonitoring ?? DateTime.now(),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              label: 'Coba Lagi',
-              icon: Icons.refresh,
-              onPressed: () => state.tanggalMonitoring != null
-                  ? controller
-                      .gantiTanggalMonitoring(state.tanggalMonitoring!)
-                  : null,
-            ),
-          ],
+              const SizedBox(height: 16),
+              PrimaryButton(
+                label: 'Coba Lagi',
+                icon: Icons.refresh,
+                onPressed: () => state.tanggalMonitoring != null
+                    ? controller
+                        .gantiTanggalMonitoring(state.tanggalMonitoring!)
+                    : null,
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -464,41 +475,79 @@ class _RingkasanRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = ringkasan.total;
-    return Row(
-      children: [
-        _RingkasanStat(
-          label: 'Hadir',
-          value: '${ringkasan.hadir}',
-          color: AppColors.success,
-        ),
-        const SizedBox(width: 12),
-        _RingkasanStat(
-          label: 'Tidak Hadir',
-          value: '${ringkasan.tidakHadir}',
-          color: AppColors.error,
-        ),
-        const SizedBox(width: 12),
-        _RingkasanStat(
-          label: 'Izin',
-          value: '${ringkasan.izin}',
-          color: const Color(0xFFD39E00),
-        ),
-        const SizedBox(width: 12),
-        _RingkasanStat(
-          label: 'Belum',
-          value: '${ringkasan.belum}',
-          color: AppColors.slate,
-        ),
-        const Spacer(),
-        Text(
-          'Total sel: $total',
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.textSecondary,
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Ringkasan Kehadiran',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                'Total: ${ringkasan.total} sel',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _RingkasanStat(
+                  label: 'Hadir',
+                  value: '${ringkasan.hadir}',
+                  color: AppColors.success,
+                  bgColor: AppColors.success.withValues(alpha: 0.08),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _RingkasanStat(
+                  label: 'Tidak Hadir',
+                  value: '${ringkasan.tidakHadir}',
+                  color: AppColors.error,
+                  bgColor: AppColors.error.withValues(alpha: 0.08),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _RingkasanStat(
+                  label: 'Izin',
+                  value: '${ringkasan.izin}',
+                  color: const Color(0xFFD39E00),
+                  bgColor: const Color(0xFFD39E00).withValues(alpha: 0.08),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _RingkasanStat(
+                  label: 'Belum',
+                  value: '${ringkasan.belum}',
+                  color: AppColors.slate,
+                  bgColor: AppColors.lightGrey,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -507,36 +556,48 @@ class _RingkasanStat extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
+  final Color bgColor;
 
   const _RingkasanStat({
     required this.label,
     required this.value,
     required this.color,
+    required this.bgColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: color,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.textSecondary,
+          const SizedBox(height: 2),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -551,56 +612,79 @@ class _MonitoringTable extends StatelessWidget {
     final jadwal = monitoring.jadwal;
     final santri = monitoring.santri;
 
-    return Column(
-      children: [
-        // Header tabel (kolom nama + satu kolom per jadwal)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.lightGrey,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(AppTheme.borderRadius),
-              topRight: Radius.circular(AppTheme.borderRadius),
-            ),
-          ),
-          child: Row(
-            children: [
-              const SizedBox(width: 110),
-              for (final j in jadwal)
-                Expanded(
-                  child: Text(
-                    j.namaSholat,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+    if (santri.isEmpty) {
+      return const EmptyState(
+        icon: Icons.table_view_outlined,
+        title: 'Tidak Ada Santri',
+        message: 'Tidak ada santri binaan aktif untuk tanggal ini.',
+      );
+    }
+
+    const colWidthNama = 130.0;
+    const colWidthJadwal = 90.0;
+    final totalWidth = colWidthNama + (jadwal.length * colWidthJadwal) + 32.0;
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        width: totalWidth < MediaQuery.of(context).size.width
+            ? MediaQuery.of(context).size.width
+            : totalWidth,
+        child: Column(
+          children: [
+            // Header tabel
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: const BoxDecoration(
+                color: AppColors.lightGrey,
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: colWidthNama,
+                    child: Text(
+                      'Nama Santri',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
-                ),
-            ],
-          ),
+                  for (final j in jadwal)
+                    SizedBox(
+                      width: colWidthJadwal,
+                      child: Text(
+                        j.namaSholat,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // Isi tabel: satu baris per santri
+            Expanded(
+              child: ListView.builder(
+                itemCount: santri.length,
+                itemBuilder: (context, index) {
+                  final s = santri[index];
+                  return _MonitoringBaris(
+                    santri: s,
+                    jadwal: jadwal,
+                    colWidthNama: colWidthNama,
+                    colWidthJadwal: colWidthJadwal,
+                  );
+                },
+              ),
+            ),
+          ],
         ),
-        // Isi tabel: satu baris per santri
-        Expanded(
-          child: santri.isEmpty
-              ? const EmptyState(
-                  icon: Icons.table_view_outlined,
-                  title: 'Tidak Ada Santri',
-                  message: 'Tidak ada santri binaan aktif untuk tanggal ini.',
-                )
-              : ListView.builder(
-                  itemCount: santri.length,
-                  itemBuilder: (context, index) {
-                    final s = santri[index];
-                    return _MonitoringBaris(
-                      santri: s,
-                      jadwal: jadwal,
-                    );
-                  },
-                ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -608,8 +692,15 @@ class _MonitoringTable extends StatelessWidget {
 class _MonitoringBaris extends StatelessWidget {
   final MonitoringSantri santri;
   final List<MonitoringJadwal> jadwal;
+  final double colWidthNama;
+  final double colWidthJadwal;
 
-  const _MonitoringBaris({required this.santri, required this.jadwal});
+  const _MonitoringBaris({
+    required this.santri,
+    required this.jadwal,
+    required this.colWidthNama,
+    required this.colWidthJadwal,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -621,7 +712,7 @@ class _MonitoringBaris extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         border: Border(
           bottom: BorderSide(color: AppColors.lightGrey),
         ),
@@ -630,7 +721,7 @@ class _MonitoringBaris extends StatelessWidget {
         children: [
           // Kolom nama santri (tetap)
           SizedBox(
-            width: 110,
+            width: colWidthNama,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -658,7 +749,8 @@ class _MonitoringBaris extends StatelessWidget {
           ),
           // Satu sel per jadwal
           for (final j in jadwal)
-            Expanded(
+            SizedBox(
+              width: colWidthJadwal,
               child: Center(
                 child: StatusBadge(
                   status: statusByJadwal[j.idJadwal] ?? 'Belum',
@@ -691,25 +783,28 @@ class _TrenSection extends ConsumerWidget {
       return const LoadingView(message: 'Memuat grafik tren...');
     }
 
-    if (state.errorMessage != null &&
-        state.errorMessage!.isNotEmpty &&
+    if (state.errorTren != null &&
+        state.errorTren!.isNotEmpty &&
         state.tren == null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ErrorBanner(
-              title: 'Gagal Memuat Grafik',
-              message: state.errorMessage!,
-              onRetry: () => controller.loadTren(),
-            ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              label: 'Coba Lagi',
-              icon: Icons.refresh,
-              onPressed: () => controller.loadTren(),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ErrorBanner(
+                title: 'Gagal Memuat Grafik',
+                message: state.errorTren!,
+                onRetry: () => controller.loadTren(),
+              ),
+              const SizedBox(height: 16),
+              PrimaryButton(
+                label: 'Coba Lagi',
+                icon: Icons.refresh,
+                onPressed: () => controller.loadTren(),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -727,6 +822,7 @@ class _TrenSection extends ConsumerWidget {
                 'Rentang: ',
                 style: TextStyle(
                   fontSize: 14,
+                  fontWeight: FontWeight.w500,
                   color: AppColors.textSecondary,
                 ),
               ),
@@ -782,78 +878,151 @@ class TrenGrafik extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final validData = data.where((d) => d.persenHadir != null).toList();
+    final avg = validData.isNotEmpty
+        ? (validData.map((d) => d.persenHadir!).reduce((a, b) => a + b) /
+                validData.length)
+            .toStringAsFixed(1)
+        : '-';
+
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Persen Kehadiran per Hari',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+          // Header ringkasan tren
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Rata-rata Kehadiran',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      avg == '-' ? '-' : '$avg%',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.emerald,
+                      ),
+                    ),
+                  ],
+                ),
+                if (data.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text(
+                        'Nilai Terakhir',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${data.last.persenDisplay}% (${data.last.total} data)',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
-          // Label sumbu Y
-          Row(
-            children: [
-              const SizedBox(width: 44),
-              Text('100', style: _labelStyle),
-              const Spacer(),
-              Text('50', style: _labelStyle),
-              const Spacer(),
-              Text('0', style: _labelStyle),
-            ],
-          ),
-          const SizedBox(height: 8),
+
+          // Area Grafik Garis dengan Sumbu Y Vertikal di kiri
           Expanded(
-            child: _GarisGrafik(data: data),
-          ),
-          const SizedBox(height: 12),
-          // Label sumbu X (tanggal)
-          SizedBox(
-            height: 40,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: data.length,
-              itemBuilder: (context, index) {
-                final d = data[index];
-                final label = _singkatTanggal(d.tanggal);
-                return Container(
-                  width: 60,
-                  alignment: Alignment.center,
-                  child: Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(10, 16, 16, 12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Label Sumbu Y Vertikal (100% - 0%)
+                        SizedBox(
+                          width: 34,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: const [
+                              Text('100%', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                              Text('75%', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                              Text('50%', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                              Text('25%', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                              Text('0%', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Canvas Grafik
+                        Expanded(
+                          child: _GarisGrafik(data: data),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
+                  const SizedBox(height: 8),
+                  // Label Sumbu X (Tanggal Pertama & Terakhir)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 42),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (data.isNotEmpty)
+                          Text(
+                            _singkatTanggal(data.first.tanggal),
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                        if (data.length > 2)
+                          Text(
+                            _singkatTanggal(data[data.length ~/ 2].tanggal),
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                        if (data.isNotEmpty)
+                          Text(
+                            _singkatTanggal(data.last.tanggal),
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 12),
-          // Ringkasan nilai terakhir
-          if (data.isNotEmpty)
-            InfoBanner(
-              icon: Icons.info_outline,
-              color: AppColors.accent,
-              message:
-                  'Nilai terakhir (${data.last.tanggal}): ${data.last.persenDisplay}% (${data.last.total} data)',
-            ),
         ],
       ),
     );
   }
-
-  static TextStyle get _labelStyle => const TextStyle(
-        fontSize: 11,
-        color: AppColors.textSecondary,
-      );
 
   static String _singkatTanggal(String tanggal) {
     try {
@@ -892,6 +1061,16 @@ class _LinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Gambar garis kisi-kisi horizontal
+    final gridPaint = Paint()
+      ..color = AppColors.lightGrey
+      ..strokeWidth = 1;
+
+    for (int step = 0; step <= 4; step++) {
+      final y = size.height * (step / 4.0);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
     if (data.isEmpty) return;
 
     final paintLine = Paint()
@@ -901,6 +1080,10 @@ class _LinePainter extends CustomPainter {
 
     final paintDot = Paint()
       ..color = AppColors.accent
+      ..style = PaintingStyle.fill;
+
+    final paintDotInner = Paint()
+      ..color = Colors.white
       ..style = PaintingStyle.fill;
 
     double maxX = (data.length - 1).toDouble();
@@ -914,7 +1097,7 @@ class _LinePainter extends CustomPainter {
       final x = (size.width / maxX) * i;
       double? y;
       if (d.persenHadir != null) {
-        y = size.height * (1 - (d.persenHadir! / 100));
+        y = size.height * (1 - (d.persenHadir! / 100).clamp(0.0, 1.0));
       }
 
       if (y != null && prevY != null && prevX != null) {
@@ -925,7 +1108,8 @@ class _LinePainter extends CustomPainter {
         );
       }
       if (y != null) {
-        canvas.drawCircle(Offset(x, y), 3, paintDot);
+        canvas.drawCircle(Offset(x, y), 4, paintDot);
+        canvas.drawCircle(Offset(x, y), 2, paintDotInner);
       }
       prevX = x;
       prevY = y;

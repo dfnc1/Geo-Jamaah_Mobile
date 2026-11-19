@@ -103,6 +103,11 @@ class BerandaController extends StateNotifier<BerandaState> {
     }
   }
 
+  /// Menghapus pesan error aktif.
+  void clearError() {
+    state = state.copyWith(clearError: true);
+  }
+
   String _mapErrorMessage(dynamic error) {
     if (error is AppException) {
       if (error.status == 401) {

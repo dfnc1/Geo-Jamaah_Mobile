@@ -148,7 +148,7 @@ class MahasantriProfilScreen extends ConsumerWidget {
               // Tombol Keluar
               PrimaryButton(
                 label: 'Keluar',
-                backgroundColor: AppColors.error,
+                isOutlined: true,
                 icon: Icons.logout,
                 onPressed: () => _confirmLogout(context, ref),
               ),

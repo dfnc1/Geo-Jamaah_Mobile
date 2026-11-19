@@ -206,6 +206,9 @@ class _MahasantriBerandaScreenState extends ConsumerState<MahasantriBerandaScree
             ErrorBanner(
               title: 'Peringatan Pembaruan',
               message: state.errorMessage!,
+              onDismiss: () {
+                ref.read(berandaControllerProvider.notifier).clearError();
+              },
             ),
             const SizedBox(height: 12),
           ],
@@ -439,36 +442,48 @@ class _JadwalCard extends StatelessWidget {
             const SizedBox(height: 8),
 
             // Baris Waktu: Jam Azan & Rentang Presensi
-            Row(
+            Wrap(
+              spacing: 16,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                const Icon(
-                  Icons.notifications_active_outlined,
-                  size: 15,
-                  color: AppColors.slate,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.notifications_active_outlined,
+                      size: 15,
+                      color: AppColors.slate,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Azan ${jadwal.waktuAzan}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.slate,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Azan ${jadwal.waktuAzan}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.slate,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                const Icon(
-                  Icons.timer_outlined,
-                  size: 15,
-                  color: AppColors.slate,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Presensi: ${jadwal.rentangPresensi}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.slate,
-                    fontWeight: FontWeight.w500,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.timer_outlined,
+                      size: 15,
+                      color: AppColors.slate,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Presensi: ${jadwal.rentangPresensi}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.slate,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

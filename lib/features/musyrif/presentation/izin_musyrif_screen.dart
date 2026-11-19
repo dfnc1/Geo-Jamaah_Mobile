@@ -121,9 +121,21 @@ class _IzinMusyrifScreenState extends ConsumerState<IzinMusyrifScreen> {
       color: AppColors.accent,
       onRefresh: () => controller.loadIzinBinaan(),
       child: ListView.builder(
-        itemCount: state.daftarIzin.length,
+        padding: const EdgeInsets.only(bottom: 16),
+        itemCount: state.daftarIzin.length + (state.errorMessage != null ? 1 : 0),
         itemBuilder: (context, index) {
-          final izin = state.daftarIzin[index];
+          if (state.errorMessage != null && index == 0) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: ErrorBanner(
+                title: 'Pemberitahuan',
+                message: state.errorMessage!,
+                onDismiss: () => controller.clearError(),
+              ),
+            );
+          }
+          final itemIndex = state.errorMessage != null ? index - 1 : index;
+          final izin = state.daftarIzin[itemIndex];
           return _IzinMusyrifCard(
             izin: izin,
             onTap: () => _bukaDetail(context, izin),

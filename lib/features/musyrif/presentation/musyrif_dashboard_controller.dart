@@ -11,8 +11,13 @@ class MusyrifDashboardState {
   final List<SantriKritis> daftarKritis;
   final MonitoringResponse? monitoring;
   final TrenKehadiranResponse? tren;
-  final String? errorMessage;
+  final String? errorKritis;
+  final String? errorMonitoring;
+  final String? errorTren;
   final DateTime? tanggalMonitoring;
+
+  /// Getter kompatibilitas pesan error aktif.
+  String? get errorMessage => errorKritis ?? errorMonitoring ?? errorTren;
 
   const MusyrifDashboardState({
     this.isLoadingKritis = false,
@@ -21,7 +26,9 @@ class MusyrifDashboardState {
     this.daftarKritis = const [],
     this.monitoring,
     this.tren,
-    this.errorMessage,
+    this.errorKritis,
+    this.errorMonitoring,
+    this.errorTren,
     this.tanggalMonitoring,
   });
 
@@ -34,6 +41,12 @@ class MusyrifDashboardState {
     bool clearMonitoring = false,
     TrenKehadiranResponse? tren,
     bool clearTren = false,
+    String? errorKritis,
+    bool clearErrorKritis = false,
+    String? errorMonitoring,
+    bool clearErrorMonitoring = false,
+    String? errorTren,
+    bool clearErrorTren = false,
     String? errorMessage,
     bool clearError = false,
     DateTime? tanggalMonitoring,
@@ -45,7 +58,15 @@ class MusyrifDashboardState {
       daftarKritis: daftarKritis ?? this.daftarKritis,
       monitoring: clearMonitoring ? null : (monitoring ?? this.monitoring),
       tren: clearTren ? null : (tren ?? this.tren),
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorKritis: clearError || clearErrorKritis
+          ? null
+          : (errorKritis ?? errorMessage ?? this.errorKritis),
+      errorMonitoring: clearError || clearErrorMonitoring
+          ? null
+          : (errorMonitoring ?? errorMessage ?? this.errorMonitoring),
+      errorTren: clearError || clearErrorTren
+          ? null
+          : (errorTren ?? errorMessage ?? this.errorTren),
       tanggalMonitoring:
           tanggalMonitoring ?? this.tanggalMonitoring,
     );
@@ -70,18 +91,18 @@ class MusyrifDashboardController
 
   /// Muat daftar santri kritis (DSS).
   Future<void> loadKritis() async {
-    state = state.copyWith(isLoadingKritis: true, clearError: true);
+    state = state.copyWith(isLoadingKritis: true, clearErrorKritis: true);
     try {
       final daftar = await repository.getSantriKritis();
       state = state.copyWith(
         isLoadingKritis: false,
         daftarKritis: daftar,
-        clearError: true,
+        clearErrorKritis: true,
       );
     } catch (e) {
       state = state.copyWith(
         isLoadingKritis: false,
-        errorMessage: _mapErrorMessage(e),
+        errorKritis: _mapErrorMessage(e),
       );
     }
   }
@@ -90,7 +111,7 @@ class MusyrifDashboardController
   Future<void> loadMonitoring(String tanggal) async {
     state = state.copyWith(
       isLoadingMonitoring: true,
-      clearError: true,
+      clearErrorMonitoring: true,
       tanggalMonitoring: DateTime.tryParse(tanggal) ?? state.tanggalMonitoring,
     );
     try {
@@ -98,30 +119,30 @@ class MusyrifDashboardController
       state = state.copyWith(
         isLoadingMonitoring: false,
         monitoring: monitoring,
-        clearError: true,
+        clearErrorMonitoring: true,
       );
     } catch (e) {
       state = state.copyWith(
         isLoadingMonitoring: false,
-        errorMessage: _mapErrorMessage(e),
+        errorMonitoring: _mapErrorMessage(e),
       );
     }
   }
 
   /// Muat tren kehadiran.
   Future<void> loadTren({int hari = 7}) async {
-    state = state.copyWith(isLoadingTren: true, clearError: true);
+    state = state.copyWith(isLoadingTren: true, clearErrorTren: true);
     try {
       final tren = await repository.getTrenKehadiran(hari: hari);
       state = state.copyWith(
         isLoadingTren: false,
         tren: tren,
-        clearError: true,
+        clearErrorTren: true,
       );
     } catch (e) {
       state = state.copyWith(
         isLoadingTren: false,
-        errorMessage: _mapErrorMessage(e),
+        errorTren: _mapErrorMessage(e),
       );
     }
   }

@@ -21,19 +21,22 @@ class ErrorBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.08),
+        color: AppColors.error.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.error_outline,
-            color: AppColors.error,
-            size: 22,
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(
+              Icons.error_outline,
+              color: AppColors.error,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -50,34 +53,38 @@ class ErrorBanner extends StatelessWidget {
                       color: AppColors.error,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                 ],
                 Text(
                   message,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: AppColors.error,
+                    color: AppColors.textPrimary,
+                    height: 1.4,
                   ),
                 ),
                 if (onRetry != null) ...[
                   const SizedBox(height: 8),
-                  GestureDetector(
+                  InkWell(
                     onTap: onRetry,
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.refresh, size: 14, color: AppColors.error),
-                        SizedBox(width: 4),
-                        Text(
-                          'Coba Lagi',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.error,
-                            decoration: TextDecoration.underline,
+                    borderRadius: BorderRadius.circular(6),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.refresh, size: 14, color: AppColors.error),
+                          SizedBox(width: 4),
+                          Text(
+                            'Coba Lagi',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.error,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -86,12 +93,15 @@ class ErrorBanner extends StatelessWidget {
           ),
           if (onDismiss != null) ...[
             const SizedBox(width: 8),
-            GestureDetector(
-              onTap: onDismiss,
-              child: const Icon(
+            IconButton(
+              iconSize: 18,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              onPressed: onDismiss,
+              tooltip: 'Tutup',
+              icon: const Icon(
                 Icons.close,
-                size: 18,
-                color: AppColors.error,
+                color: AppColors.slate,
               ),
             ),
           ],
