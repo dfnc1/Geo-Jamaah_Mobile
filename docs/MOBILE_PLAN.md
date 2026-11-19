@@ -16,6 +16,7 @@ memperbarui tabel status di bawah pada commit yang sama dengan kodenya.
 | M6 | Musyrif: verifikasi izin | ✅ | ⬜ |
 | M7 | Musyrif: santri kritis, monitoring, grafik | ✅ | ⬜ |
 | M8 | Perapian dan dokumentasi build | ✅ | ⬜ |
+| M9 | Admin: rekap, tren, activity log, reset device, job | ✅ | ⬜ |
 
 Kolom "Tes di perangkat" HANYA diubah oleh pemilik proyek (aku), bukan
 agent.
@@ -158,6 +159,30 @@ Endpoint: GET /v1/musyrif/dss/santri-kritis, GET
 - flutter analyze tanpa peringatan, flutter test lulus.
 - Commit terpisah: chore(mobile) lalu docs(mobile).
 
+## M9: Admin Panel Mobile
+
+Endpoint: GET /v1/admin/rekap, GET /v1/admin/dashboard/tren-kehadiran?hari=,
+POST /v1/admin/mahasantri/:nim/reset-device, POST
+/v1/admin/jobs/tandai-tidak-hadir, GET /v1/admin/activity-logs.
+- Ganti placeholder Admin dengan AdminScreen fungsional lengkap (3 tab navigasi):
+  - Tab 0 (Ringkasan): kartu metrik utama (Santri Aktif, Santri Kritis DSS),
+    rekap presensi 30 hari (Hadir, Tidak Hadir, Izin, Manual, Total), rekap
+    izin (Pending, Disetujui, Ditolak), dan grafik garis tren kehadiran global
+    (7, 14, 30 hari). Pull-to-refresh.
+  - Tab 1 (Log Aktivitas): audit trail aktivitas sistem, filter modul
+    (Semua, Auth, Presensi, Izin, Masjid, Jadwal, Mahasantri, Jobs), waktu WIB,
+    username & role, paginasi muat lebih banyak, pull-to-refresh.
+  - Tab 2 (Kelola): aksi cepat Admin:
+    - Form Reset Device ID Mahasantri (input NIM, validasi, dialog konfirmasi, feedback).
+    - Pemicu Job Kehadiran Otomatis (eksekusi hari ini & backfill tanggal via date picker).
+    - Profil Admin & tombol Keluar dengan konfirmasi.
+- Domain & Data: `AdminRekap`, `PresensiRekap`, `IzinRekap`, `ResetDeviceResult`,
+  `JobTandaiResult`, `ActivityLogItem`, `ActivityLogResponse`, `AdminRepository`,
+  `AdminErrorMapper`, `AdminDashboardController`.
+- Unit test: deserialisasi model JSON dari contoh kontrak, pemetaan kode error,
+  uji form dan aksi.
+- Commit: feat(mobile): implement admin dashboard, activity logs, and device reset.
+
 ## Checklist tes akhir (dijalankan pemilik proyek di HP)
 
 Persiapan: backend menyala dengan seed dan pnpm seed:demo, koordinat
@@ -166,7 +191,7 @@ window, aplikasi dijalankan dengan alamat server yang benar, dan
 jaringan terbukti (http://<IP>:3000/docs terbuka di browser HP).
 
 1. Login: Mahasantri benar, password salah, akun nonaktif, Musyrif,
-   Admin (halaman "belum tersedia"), tutup-buka aplikasi tetap login.
+   Admin (dashboard Admin dengan rekap, tren, log, reset device), tutup-buka aplikasi tetap login.
 2. Perangkat: akun yang sama dari perangkat lain ditolak, akun lain di
    perangkat yang sama ditolak, reset device lewat Swagger lalu berhasil.
 3. Beranda: jadwal tampil, status berubah setelah presensi, muat ulang

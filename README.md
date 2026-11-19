@@ -27,10 +27,9 @@
 - **Verifikasi Izin:** Menyetujui atau menolak pengajuan izin mahasantri binaan.
 - **Rekapitulasi Kehadiran:** Meninjau rekapitulasi individu dan kelompok per kamar.
 
-### 3. Admin / Pengasuh (Strategic Role — Web Dashboard Admin)
-- **Master Data Management:** Pengelolaan data Mahasantri, Musyrif, Jadwal Shalat, dan Koordinat Masjid.
-- **Evaluasi Kebijakan:** Penyesuaian variabel `radius_toleransi` masjid dan rentang *window time* presensi.
-- *(Layar Admin belum tersedia di aplikasi mobile; diakses via Web Dashboard Admin / Swagger.)*
+### 3. Admin / Pengasuh (Strategic Role)
+- **Master Data Management:** Pengelolaan data Mahasantri, Musyrif, Jadwal Shalat, dan Koordinat Masjid (diakses via Web Dashboard Admin / Swagger).
+- **Fitur Admin Mobile:** Panel monitoring rekapitulasi global, tren grafik kehadiran, peninjauan log aktivitas sistem (audit trail), eksekusi manual job presensi, dan reset ikatan device ID mahasantri.
 
 ---
 
@@ -123,7 +122,7 @@ Sebagian besar kode dalam proyek ini dikembangkan dengan bantuan **AI (Artificia
 - `docs/FRONTEND_GUIDE.md` — panduan frontend dan status endpoint
 - `docs/BUSINESS_RULES.md` — aturan bisnis sistem
 - `docs/DATABASE_SCHEMA.md` — skema database
-- `docs/MOBILE_PLAN.md` — rencana pengerjaan tahap mobile (M1–M8)
+- `docs/MOBILE_PLAN.md` — rencana pengerjaan tahap mobile (M1–M9)
 - `AGENTS.md` — konteks dan aturan pengembangan agent
 
 ---

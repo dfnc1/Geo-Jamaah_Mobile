@@ -47,26 +47,30 @@ class _SantriTabScreenState extends ConsumerState<SantriTabScreen> {
           // Segmented control untuk tiga bagian
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: SegmentedButton<int>(
-              segments: const [
-                ButtonSegment(
-                  value: 0,
-                  icon: Icon(Icons.warning_outlined),
-                  label: Text('Kritis'),
-                ),
-                ButtonSegment(
-                  value: 1,
-                  icon: Icon(Icons.table_view_outlined),
-                  label: Text('Monitoring'),
-                ),
-                ButtonSegment(
-                  value: 2,
-                  icon: Icon(Icons.show_chart_outlined),
-                  label: Text('Grafik'),
-                ),
-              ],
-              selected: {_tabIndex},
-              onSelectionChanged: (set) => setState(() => _tabIndex = set.first),
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<int>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(
+                    value: 0,
+                    icon: Icon(Icons.warning_outlined),
+                    label: Text('Kritis'),
+                  ),
+                  ButtonSegment(
+                    value: 1,
+                    icon: Icon(Icons.table_view_outlined),
+                    label: Text('Monitoring'),
+                  ),
+                  ButtonSegment(
+                    value: 2,
+                    icon: Icon(Icons.show_chart_outlined),
+                    label: Text('Grafik'),
+                  ),
+                ],
+                selected: {_tabIndex},
+                onSelectionChanged: (set) => setState(() => _tabIndex = set.first),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -423,22 +427,37 @@ class _MonitoringSection extends ConsumerWidget {
                 color: AppColors.accent,
               ),
               const SizedBox(width: 8),
-              Text(
-                'Tanggal: $tanggal',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+              Expanded(
+                child: Text(
+                  'Tanggal: $tanggal',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
-              PrimaryButton(
-                label: 'Ganti Tanggal',
-                icon: Icons.calendar_today,
-                isOutlined: true,
-                width: 130,
-                height: 40,
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
                 onPressed: () => _pilihTanggal(context),
+                icon: const Icon(Icons.calendar_today, size: 16),
+                label: const Text('Ganti Tanggal'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.emerald,
+                  side: const BorderSide(color: AppColors.emerald, width: 1.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: const Size(0, 38),
+                  visualDensity: VisualDensity.compact,
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                  ),
+                ),
               ),
             ],
           ),
