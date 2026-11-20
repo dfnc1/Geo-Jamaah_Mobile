@@ -8,7 +8,7 @@ import 'package:geo_jamaah/features/presensi/domain/mock_location_detector.dart'
 import 'package:geo_jamaah/features/presensi/domain/presensi_models.dart';
 import 'package:geo_jamaah/features/presensi/presentation/presensi_controller.dart';
 import 'package:geo_jamaah/features/presensi/presentation/presensi_screen.dart';
-import 'api_client_test.dart';
+import '../../helpers/test_fakes.dart' show FakeTokenStore;
 import 'mock_location_detector_test.dart';
 import 'presensi_controller_test.dart';
 

@@ -6,7 +6,7 @@ import 'package:geo_jamaah/features/presensi/data/presensi_repository.dart';
 import 'package:geo_jamaah/features/presensi/domain/location_service.dart';
 import 'package:geo_jamaah/features/presensi/domain/presensi_models.dart';
 import 'package:geo_jamaah/features/presensi/presentation/presensi_controller.dart';
-import 'api_client_test.dart';
+import '../../helpers/test_fakes.dart' show FakeTokenStore;
 import 'mock_location_detector_test.dart';
 
 class FakeLocationService implements LocationService {

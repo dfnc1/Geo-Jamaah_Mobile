@@ -1,5 +1,3 @@
-import '../../musyrif/domain/musyrif_models.dart';
-
 /// Ringkasan Presensi Global dari GET /v1/admin/rekap
 class PresensiRekap {
   final int hadir;

@@ -6,7 +6,7 @@ import 'package:geo_jamaah/features/musyrif/domain/izin_musyrif_error_mapper.dar
 import 'package:geo_jamaah/features/musyrif/domain/izin_musyrif_model.dart';
 import 'package:geo_jamaah/features/musyrif/presentation/izin_musyrif_controller.dart';
 import 'fake_izin_musyrif_repository.dart';
-import 'api_client_test.dart';
+import '../../helpers/test_fakes.dart' show FakeTokenStore;
 
 void main() {
   group('IzinMusyrifItem.fromJson', () {

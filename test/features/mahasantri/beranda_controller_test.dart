@@ -4,7 +4,7 @@ import 'package:geo_jamaah/core/app_exception/app_exception.dart';
 import 'package:geo_jamaah/features/mahasantri/data/mahasantri_repository.dart';
 import 'package:geo_jamaah/features/mahasantri/domain/presensi_hari_ini_model.dart';
 import 'package:geo_jamaah/features/mahasantri/presentation/beranda_controller.dart';
-import 'api_client_test.dart';
+import '../../helpers/test_fakes.dart';
 
 class MockMahasantriRepository implements MahasantriRepository {
   @override

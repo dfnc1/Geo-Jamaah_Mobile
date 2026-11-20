@@ -10,9 +10,8 @@ import 'package:geo_jamaah/features/mahasantri/data/mahasantri_repository.dart';
 import 'package:geo_jamaah/features/mahasantri/domain/presensi_hari_ini_model.dart';
 import 'package:geo_jamaah/features/mahasantri/presentation/beranda_controller.dart';
 import 'package:geo_jamaah/features/musyrif/data/izin_musyrif_repository.dart';
-import 'fake_izin_musyrif_repository.dart';
-import 'api_client_test.dart';
-import 'auth_controller_test.dart';
+import 'package:geo_jamaah/features/admin/presentation/admin_screen.dart';
+import '../helpers/test_fakes.dart';
 
 class FakeMahasantriRepository implements MahasantriRepository {
   @override
@@ -161,7 +160,7 @@ void main() {
       expect(find.text('Semua'), findsOneWidget);
     });
 
-    testWidgets('peran Admin diarahkan ke halaman belum tersedia /admin', (tester) async {
+    testWidgets('peran Admin diarahkan ke halaman Admin /admin', (tester) async {
       final controller = AuthController(
         authRepository: fakeAuthRepository,
         deviceIdService: mockDeviceIdService,
@@ -177,13 +176,14 @@ void main() {
       );
 
       await tester.pumpWidget(buildTestApp(controller: controller));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
+      expect(find.byType(AdminScreen), findsOneWidget);
       expect(find.text('Admin Panel'), findsOneWidget);
-      expect(
-        find.text('Peran Admin belum tersedia di aplikasi mobile'),
-        findsOneWidget,
-      );
+      expect(find.text('Ringkasan'), findsOneWidget);
+      expect(find.text('Log Aktivitas'), findsOneWidget);
+      expect(find.text('Kelola'), findsOneWidget);
     });
 
     testWidgets('pengguna terautentikasi dicegah membuka /login', (tester) async {

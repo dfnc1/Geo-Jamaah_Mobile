@@ -179,8 +179,9 @@ POST /v1/admin/mahasantri/:nim/reset-device, POST
 - Domain & Data: `AdminRekap`, `PresensiRekap`, `IzinRekap`, `ResetDeviceResult`,
   `JobTandaiResult`, `ActivityLogItem`, `ActivityLogResponse`, `AdminRepository`,
   `AdminErrorMapper`, `AdminDashboardController`.
-- Unit test: deserialisasi model JSON dari contoh kontrak, pemetaan kode error,
-  uji form dan aksi.
+- Unit test & widget test: deserialisasi model JSON dari contoh kontrak, pemetaan kode error,
+  uji form dan aksi (controller & widget test navigasi tab admin). Struktur folder test
+  diorganisir rapi mencerminkan lib/ (test/core/, test/features/) didukung test/helpers/test_fakes.dart.
 - Commit: feat(mobile): implement admin dashboard, activity logs, and device reset.
 
 ## Checklist tes akhir (dijalankan pemilik proyek di HP)

@@ -920,34 +920,12 @@ class TrenGrafik extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Rata-rata Kehadiran',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      avg == '-' ? '-' : '$avg%',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.emerald,
-                      ),
-                    ),
-                  ],
-                ),
-                if (data.isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Nilai Terakhir',
+                        'Rata-rata Kehadiran',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -956,14 +934,43 @@ class TrenGrafik extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${data.last.persenDisplay}% (${data.last.total} data)',
+                        avg == '-' ? '-' : '$avg%',
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.emerald,
                         ),
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (data.isNotEmpty)
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text(
+                          'Nilai Terakhir',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${data.last.persenDisplay}% (${data.last.total} data)',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
               ],
             ),

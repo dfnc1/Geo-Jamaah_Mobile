@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../musyrif/presentation/santri_tab_screen.dart';
+import '../domain/admin_models.dart';
 import 'admin_dashboard_controller.dart';
 
 /// Layar utama Admin dengan 3 tab navigasi:
@@ -329,15 +330,19 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Tren Kehadiran Global',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+              const Expanded(
+                child: Text(
+                  'Tren Kehadiran Global',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [7, 14, 30].map((h) {
                   final isSelected = state.trenHari == h;
                   return Padding(
@@ -567,12 +572,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                         size: 20, color: AppColors.accent),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Reset Device ID Mahasantri',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                  const Expanded(
+                    child: Text(
+                      'Reset Device ID Mahasantri',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                 ],
@@ -629,9 +636,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                       ],
                     ),
                   );
-                  if (yakin == true && context.mounted) {
+                  if (yakin == true && mounted) {
                     final sukses = await controller.resetDevice(nim);
-                    if (sukses && context.mounted) {
+                    if (sukses && mounted) {
                       _nimController.clear();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -674,12 +681,14 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                         size: 20, color: AppColors.emerald),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Pemicu Job Presensi Otomatis',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                  const Expanded(
+                    child: Text(
+                      'Pemicu Job Presensi Otomatis',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                 ],
@@ -694,84 +703,76 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: PrimaryButton(
-                      label: 'Jalankan Hari Ini',
-                      icon: Icons.play_arrow,
-                      isLoading: state.isActionLoading,
-                      onPressed: () async {
-                        final yakin = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Jalankan Job Presensi'),
-                            content: const Text(
-                              'Jalankan penandaan otomatis untuk seluruh jadwal sholat hari ini yang sudah melewati batas waktu presensi?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(false),
-                                child: const Text('Batal'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(true),
-                                child: const Text('Jalankan'),
-                              ),
-                            ],
+              PrimaryButton(
+                label: 'Jalankan Hari Ini',
+                icon: Icons.play_arrow,
+                isLoading: state.isActionLoading,
+                onPressed: () async {
+                  final yakin = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Jalankan Job Presensi'),
+                      content: const Text(
+                        'Jalankan penandaan otomatis untuk seluruh jadwal sholat hari ini yang sudah melewati batas waktu presensi?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          child: const Text('Batal'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                          child: const Text('Jalankan'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (yakin == true && mounted) {
+                    await controller.triggerJob();
+                  }
+                },
+              ),
+              const SizedBox(height: 10),
+              PrimaryButton(
+                label: 'Backfill Tanggal',
+                icon: Icons.calendar_month,
+                isOutlined: true,
+                isLoading: state.isActionLoading,
+                onPressed: () async {
+                  final now = DateTime.now();
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: now.subtract(const Duration(days: 1)),
+                    firstDate: now.subtract(const Duration(days: 60)),
+                    lastDate: now,
+                  );
+                  if (picked != null && mounted) {
+                    final formatted =
+                        DateFormat('yyyy-MM-dd').format(picked);
+                    final yakin = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Konfirmasi Backfill'),
+                        content: Text(
+                          'Jalankan penandaan otomatis (backfill) untuk tanggal $formatted?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('Batal'),
                           ),
-                        );
-                        if (yakin == true && context.mounted) {
-                          await controller.triggerJob();
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: PrimaryButton(
-                      label: 'Backfill Tanggal',
-                      icon: Icons.calendar_month,
-                      isOutlined: true,
-                      isLoading: state.isActionLoading,
-                      onPressed: () async {
-                        final now = DateTime.now();
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: now.subtract(const Duration(days: 1)),
-                          firstDate: now.subtract(const Duration(days: 60)),
-                          lastDate: now,
-                        );
-                        if (picked != null && context.mounted) {
-                          final formatted =
-                              DateFormat('yyyy-MM-dd').format(picked);
-                          final yakin = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Konfirmasi Backfill'),
-                              content: Text(
-                                'Jalankan penandaan otomatis (backfill) untuk tanggal $formatted?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(ctx).pop(false),
-                                  child: const Text('Batal'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.of(ctx).pop(true),
-                                  child: const Text('Jalankan Backfill'),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (yakin == true && context.mounted) {
-                            await controller.triggerJob(tanggal: formatted);
-                          }
-                        }
-                      },
-                    ),
-                  ),
-                ],
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text('Jalankan Backfill'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (yakin == true && mounted) {
+                      await controller.triggerJob(tanggal: formatted);
+                    }
+                  }
+                },
               ),
             ],
           ),
@@ -799,7 +800,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                   user?.displayName ?? 'Administrator',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: Text('Role: ${user?.role.name ?? 'Admin'}'),
+                subtitle: Text('Role: ${user?.role ?? 'Admin'}'),
               ),
               const Divider(height: 24),
               PrimaryButton(
@@ -826,7 +827,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                       ],
                     ),
                   );
-                  if (yakin == true && context.mounted) {
+                  if (yakin == true && mounted) {
                     await ref.read(authControllerProvider.notifier).logout();
                   }
                 },
@@ -932,12 +933,13 @@ class _MiniStat extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
             ),
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ],
@@ -1011,11 +1013,16 @@ class _LogCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(
-                _formatTimestamp(log.createdAt),
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  _formatTimestamp(log.createdAt),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
