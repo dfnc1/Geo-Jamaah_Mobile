@@ -31,12 +31,16 @@ class MusyrifDashboardRepository {
     throw const FormatException('Format respons santri kritis tidak valid');
   }
 
-  /// Mengambil monitoring presensi per tanggal.
+  /// Mengambil monitoring presensi per tanggal (kosong = default hari ini WIB dari server).
   /// Endpoint: GET /v1/musyrif/presensi/monitoring?tanggal=
-  Future<MonitoringResponse> getMonitoring({required String tanggal}) async {
+  Future<MonitoringResponse> getMonitoring({String? tanggal}) async {
+    final queryParameters = <String, dynamic>{};
+    if (tanggal != null && tanggal.isNotEmpty) {
+      queryParameters['tanggal'] = tanggal;
+    }
     final response = await apiClient.get<dynamic>(
       '/v1/musyrif/presensi/monitoring',
-      queryParameters: {'tanggal': tanggal},
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
     );
     if (response.data is Map<String, dynamic>) {
       return MonitoringResponse.fromJson(response.data as Map<String, dynamic>);

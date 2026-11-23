@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +12,9 @@ class AuthEventNotifier extends ChangeNotifier {
 
 /// Provider untuk event autentikasi global.
 final authEventProvider = Provider<AuthEventNotifier>((ref) {
-  return AuthEventNotifier();
+  final notifier = AuthEventNotifier();
+  ref.onDispose(notifier.dispose);
+  return notifier;
 });
 
 /// Provider global untuk ApiClient.
@@ -20,8 +23,8 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   final authEvent = ref.watch(authEventProvider);
   return ApiClient(
     tokenStore: tokenStore,
-    onLogout: () {
-      tokenStore.clear();
+    onLogout: () async {
+      await tokenStore.clear();
       authEvent.notifySessionExpired();
     },
   );
@@ -36,7 +39,7 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 class ApiClient {
   final Dio dio;
   final TokenStore tokenStore;
-  final void Function()? onLogout;
+  final FutureOr<void> Function()? onLogout;
 
   static const String defaultBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
@@ -92,12 +95,14 @@ class ApiClient {
           options.path = '/${options.path}';
         }
 
-        // Menyertakan token Bearer jika tersedia
-        final token = await tokenStore.getToken();
-        if (token != null &&
-            token.isNotEmpty &&
-            !options.headers.containsKey('Authorization')) {
-          options.headers['Authorization'] = 'Bearer $token';
+        // Jangan tempel token sisa ke endpoint login publik agar 401 gagal login tidak memicu logout global.
+        if (options.path != '/auth/login') {
+          final token = await tokenStore.getToken();
+          if (token != null &&
+              token.isNotEmpty &&
+              !options.headers.containsKey('Authorization')) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
         }
         return handler.next(options);
       },
@@ -111,7 +116,7 @@ class ApiClient {
         }
         return handler.next(response);
       },
-      onError: (err, handler) {
+      onError: (err, handler) async {
         final errResponse = err.response;
         int? statusCode = errResponse?.statusCode;
         String code = 'ERR_NETWORK';
@@ -122,7 +127,7 @@ class ApiClient {
           final resData = errResponse.data as Map<String, dynamic>;
           code = resData['error']?.toString() ?? 'ERR_SERVER';
           message = resData['message']?.toString() ?? 'Terjadi kesalahan pada server';
-          statusCode = (resData['statusCode'] as int?) ?? statusCode;
+          statusCode = (resData['statusCode'] as num?)?.toInt() ?? statusCode;
           details = resData;
         } else if (err.type == DioExceptionType.connectionTimeout ||
             err.type == DioExceptionType.receiveTimeout ||
@@ -144,7 +149,7 @@ class ApiClient {
             authHeader.trim().isNotEmpty;
 
         if (statusCode == 401 && isAuthRequest) {
-          onLogout?.call();
+          await onLogout?.call();
         }
 
         final appException = AppException(

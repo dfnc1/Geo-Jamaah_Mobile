@@ -1,10 +1,14 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geo_jamaah/core/app_exception/app_exception.dart';
 import 'package:geo_jamaah/core/api_client/api_client.dart';
 import 'package:geo_jamaah/features/mahasantri/domain/izin_model.dart';
+import 'package:geo_jamaah/features/musyrif/data/izin_musyrif_repository.dart';
 import 'package:geo_jamaah/features/musyrif/domain/izin_musyrif_error_mapper.dart';
 import 'package:geo_jamaah/features/musyrif/domain/izin_musyrif_model.dart';
 import 'package:geo_jamaah/features/musyrif/presentation/izin_musyrif_controller.dart';
+import 'package:geo_jamaah/features/musyrif/presentation/izin_musyrif_screen.dart';
 import 'fake_izin_musyrif_repository.dart';
 import '../../helpers/test_fakes.dart' show FakeTokenStore;
 
@@ -222,6 +226,53 @@ void main() {
       expect(
         IzinMusyrifErrorMapper.map(err),
         'Izin tidak ditemukan.',
+      );
+    });
+  });
+
+  group('IzinMusyrifScreen - Bottom Sheet Verifikasi', () {
+    testWidgets('menampilkan pesan error asli terbaru saat verifikasi gagal', (tester) async {
+      final repo = FakeIzinMusyrifRepository(
+        apiClient: ApiClient(tokenStore: FakeTokenStore()),
+      );
+      repo.daftar = [
+        const IzinMusyrifItem(
+          idIzin: 'izin-1',
+          nim: '24050505050',
+          namaMahasantri: 'Ahmad Fauzi',
+          jenisIzin: 'Sakit',
+          tanggalIzin: '2026-10-05T00:00:00.000Z',
+          alasan: 'Sakit demam',
+          statusPersetujuan: 'Pending',
+        ),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [izinMusyrifRepositoryProvider.overrideWithValue(repo)],
+          child: const MaterialApp(home: IzinMusyrifScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Ahmad Fauzi'));
+      await tester.pumpAndSettle();
+
+      repo.error = const AppException(
+        code: 'ERR_IZIN_ALREADY_DECIDED',
+        message: 'Already decided',
+        status: 409,
+      );
+
+      await tester.tap(find.text('Setujui'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: find.text('Izin sudah diputuskan dan tidak dapat diubah lagi.'),
+        ),
+        findsOneWidget,
       );
     });
   });

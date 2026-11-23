@@ -48,7 +48,7 @@ class IzinMusyrifRepository {
     required String statusBaru,
   }) async {
     final response = await apiClient.patch<dynamic>(
-      '/v1/musyrif/izin/$idIzin/verify',
+      '/v1/musyrif/izin/${Uri.encodeComponent(idIzin)}/verify',
       data: {'status_persetujuan': statusBaru},
     );
     if (response.data is Map<String, dynamic>) {

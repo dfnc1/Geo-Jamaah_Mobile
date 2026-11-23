@@ -183,8 +183,8 @@ class PresensiController extends StateNotifier<PresensiState> {
   // ── Tahap 1: Periksa & Minta Izin ───────────────────────────────────────
 
   Future<void> _periksaIzin(PresensiArgs args) async {
-    // 1. Cek apakah layanan GPS aktif
     final serviceEnabled = await locationService.isLocationServiceEnabled();
+    if (!mounted) return;
     if (!serviceEnabled) {
       state = state.copyWith(
         tahap: TahapPresensi.error,
@@ -195,11 +195,12 @@ class PresensiController extends StateNotifier<PresensiState> {
       return;
     }
 
-    // 2. Periksa status izin lokasi
     LocationPermission permission = await locationService.checkPermission();
+    if (!mounted) return;
 
     if (permission == LocationPermission.denied) {
       permission = await locationService.requestPermission();
+      if (!mounted) return;
     }
 
     if (permission == LocationPermission.denied) {
@@ -222,13 +223,11 @@ class PresensiController extends StateNotifier<PresensiState> {
       return;
     }
 
-    // Izin diberikan -> Lanjut ambil koordinat GPS
     await _ambilPosisi(args);
   }
 
-  // ── Tahap 2: Ambil Posisi GPS ────────────────────────────────────────────
-
   Future<void> _ambilPosisi(PresensiArgs args) async {
+    if (!mounted) return;
     state = state.copyWith(
       tahap: TahapPresensi.ambilPosisi,
       clearError: true,
@@ -239,11 +238,11 @@ class PresensiController extends StateNotifier<PresensiState> {
         accuracy: LocationAccuracy.high,
         timeLimit: kGpsTimeout,
       );
+      if (!mounted) return;
 
       final akurasi = position.accuracy;
       state = state.copyWith(akurasiSaatIni: akurasi);
 
-      // Tahap 3: Validasi akurasi di sisi klien (<= 50 m diterima, > 50 m ditolak)
       if (akurasi > kMaxAkurasiMeter) {
         state = state.copyWith(
           tahap: TahapPresensi.akurasiKurang,
@@ -253,12 +252,12 @@ class PresensiController extends StateNotifier<PresensiState> {
         return;
       }
 
-      // Deteksi mock location (Position.isMocked || SafeDevice.isMockLocation)
       final isMock = await mockLocationDetector.isMockLocation(position);
+      if (!mounted) return;
 
-      // Lanjut kirim ke server (nilai isMock true tetap dikirim ke server)
       await _kirimPresensi(position, isMock, args);
     } on LocationServiceDisabledException {
+      if (!mounted) return;
       state = state.copyWith(
         tahap: TahapPresensi.error,
         jenisError: JenisErrorPresensi.gpsNonaktif,
@@ -266,6 +265,7 @@ class PresensiController extends StateNotifier<PresensiState> {
             'Layanan lokasi dimatikan saat mengambil posisi. Aktifkan GPS lalu coba lagi.',
       );
     } on PermissionDeniedException {
+      if (!mounted) return;
       state = state.copyWith(
         tahap: TahapPresensi.error,
         jenisError: JenisErrorPresensi.izinDitolak,
@@ -273,6 +273,7 @@ class PresensiController extends StateNotifier<PresensiState> {
             'Izin lokasi dicabut saat mengambil posisi. Coba lagi untuk memberikan izin.',
       );
     } on TimeoutException {
+      if (!mounted) return;
       state = state.copyWith(
         tahap: TahapPresensi.error,
         jenisError: JenisErrorPresensi.gpsGagal,
@@ -280,6 +281,7 @@ class PresensiController extends StateNotifier<PresensiState> {
             'Pengambilan lokasi melebihi batas waktu (${kGpsTimeout.inSeconds} detik). Pindah ke area dengan sinyal GPS lebih baik lalu coba lagi.',
       );
     } catch (_) {
+      if (!mounted) return;
       state = state.copyWith(
         tahap: TahapPresensi.error,
         jenisError: JenisErrorPresensi.gpsGagal,
@@ -288,13 +290,12 @@ class PresensiController extends StateNotifier<PresensiState> {
     }
   }
 
-  // ── Tahap 4: Kirim ke Server ─────────────────────────────────────────────
-
   Future<void> _kirimPresensi(
     Position position,
     bool isMock,
     PresensiArgs args,
   ) async {
+    if (!mounted) return;
     state = state.copyWith(tahap: TahapPresensi.mengirim);
 
     try {
@@ -308,10 +309,11 @@ class PresensiController extends StateNotifier<PresensiState> {
       );
 
       final hasil = await repository.postPresensi(request);
+      if (!mounted) return;
       state = state.copyWith(tahap: TahapPresensi.berhasil, hasil: hasil);
     } on AppException catch (e) {
+      if (!mounted) return;
       if (e.code == 'ERR_ALREADY_PRESENT') {
-        // Tampilkan pesan netral "Anda sudah presensi untuk shalat ini." (bukan layar sukses)
         state = state.copyWith(
           tahap: TahapPresensi.sudahPresensi,
           pesanError: 'Anda sudah presensi untuk shalat ini.',
@@ -324,6 +326,7 @@ class PresensiController extends StateNotifier<PresensiState> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         tahap: TahapPresensi.error,
         jenisError: JenisErrorPresensi.lainnya,

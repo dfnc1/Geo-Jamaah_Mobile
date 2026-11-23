@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geo_jamaah/core/api_client/api_client.dart';
@@ -14,6 +15,7 @@ class FakeLocationService implements LocationService {
   LocationPermission permissionStatus = LocationPermission.whileInUse;
   LocationPermission requestResult = LocationPermission.whileInUse;
   Position? customPosition;
+  Completer<Position>? positionCompleter;
   Exception? positionError;
   bool appSettingsOpened = false;
   bool locationSettingsOpened = false;
@@ -32,6 +34,7 @@ class FakeLocationService implements LocationService {
     LocationAccuracy accuracy = LocationAccuracy.high,
     Duration timeLimit = const Duration(seconds: 20),
   }) async {
+    if (positionCompleter != null) return positionCompleter!.future;
     if (positionError != null) throw positionError!;
     return customPosition ?? createTestPosition();
   }
@@ -265,6 +268,22 @@ void main() {
     test('bukaSettingLokasi memanggil openLocationSettings pada LocationService', () async {
       await controller.bukaSettingLokasi();
       expect(fakeLocationService.locationSettingsOpened, true);
+    });
+  });
+
+  group('PresensiController - Keamanan Dispose', () {
+    test('dispose saat GPS masih menunggu tidak crash dan tidak mengirim presensi', () async {
+      final completer = Completer<Position>();
+      fakeLocationService.positionCompleter = completer;
+
+      final future = controller.mulai(testArgs);
+      await Future<void>.delayed(Duration.zero);
+
+      controller.dispose();
+      completer.complete(createTestPosition(accuracy: 10.0));
+      await future;
+
+      expect(fakeRepository.callCount, 0);
     });
   });
 }

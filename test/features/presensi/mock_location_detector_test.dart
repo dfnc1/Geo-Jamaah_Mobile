@@ -34,9 +34,11 @@ class FakeMockLocationDetector implements MockLocationDetector {
 }
 
 void main() {
-  group('MockLocationDetector', () {
+  group('DefaultMockLocationDetector', () {
     test('Position.isMocked true menghasilkan true', () async {
-      final detector = FakeMockLocationDetector(returnValue: false);
+      final detector = DefaultMockLocationDetector(
+        checkSafeDevice: () async => false,
+      );
       final posMocked = createTestPosition(isMocked: true);
 
       final result = await detector.isMockLocation(posMocked);
@@ -44,7 +46,9 @@ void main() {
     });
 
     test('safe_device true menghasilkan true meskipun Position.isMocked false', () async {
-      final detector = FakeMockLocationDetector(returnValue: true);
+      final detector = DefaultMockLocationDetector(
+        checkSafeDevice: () async => true,
+      );
       final posNormal = createTestPosition(isMocked: false);
 
       final result = await detector.isMockLocation(posNormal);
@@ -52,11 +56,22 @@ void main() {
     });
 
     test('keduanya false menghasilkan false', () async {
-      final detector = FakeMockLocationDetector(returnValue: false);
+      final detector = DefaultMockLocationDetector(
+        checkSafeDevice: () async => false,
+      );
       final posNormal = createTestPosition(isMocked: false);
 
       final result = await detector.isMockLocation(posNormal);
       expect(result, false);
+    });
+
+    test('exception dari safe_device fallback ke position.isMocked tanpa melempar error', () async {
+      final detector = DefaultMockLocationDetector(
+        checkSafeDevice: () async => throw Exception('platform error'),
+      );
+
+      expect(await detector.isMockLocation(createTestPosition(isMocked: false)), false);
+      expect(await detector.isMockLocation(createTestPosition(isMocked: true)), true);
     });
   });
 }

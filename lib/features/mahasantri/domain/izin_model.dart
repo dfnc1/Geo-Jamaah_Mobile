@@ -133,42 +133,5 @@ class IzinItem {
       StatusPersetujuanIzin.fromString(statusPersetujuan);
 }
 
-/// Respons sukses POST /v1/izin (data sudah di-unwrap ApiClient).
-class IzinResult {
-  final String idIzin;
-  final String nim;
-  final String jenisIzin;
-  final String tanggalIzin;
-  final String alasan;
-  final String? buktiLampiran;
-  final String statusPersetujuan;
-
-  const IzinResult({
-    required this.idIzin,
-    required this.nim,
-    required this.jenisIzin,
-    required this.tanggalIzin,
-    required this.alasan,
-    this.buktiLampiran,
-    required this.statusPersetujuan,
-  });
-
-  factory IzinResult.fromJson(Map<String, dynamic> json) {
-    return IzinResult(
-      idIzin: json['id_izin']?.toString() ?? '',
-      nim: json['nim']?.toString() ?? '',
-      jenisIzin: json['jenis_izin']?.toString() ?? '',
-      tanggalIzin: json['tanggal_izin']?.toString() ?? '',
-      alasan: json['alasan']?.toString() ?? '',
-      buktiLampiran: json['bukti_lampiran']?.toString(),
-      statusPersetujuan:
-          json['status_persetujuan']?.toString() ?? 'Pending',
-    );
-  }
-
-  /// Tanggal dalam format YYYY-MM-DD (ambil 10 karakter pertama dari ISO UTC).
-  String get tanggalDisplay {
-    if (tanggalIzin.isEmpty) return '-';
-    return tanggalIzin.length >= 10 ? tanggalIzin.substring(0, 10) : tanggalIzin;
-  }
-}
+/// Respons sukses POST /v1/izin memiliki struktur yang sama dengan [IzinItem].
+typedef IzinResult = IzinItem;

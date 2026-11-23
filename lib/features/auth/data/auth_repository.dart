@@ -56,6 +56,11 @@ class AuthRepository {
 
     if (token != null && token.isNotEmpty && userJson != null) {
       final user = UserModel.fromJson(userJson);
+      const validRoles = {'mahasantri', 'musyrif', 'admin'};
+      if (!validRoles.contains(user.role.toLowerCase())) {
+        await tokenStore.clear();
+        return null;
+      }
       return (user: user, token: token);
     }
     return null;

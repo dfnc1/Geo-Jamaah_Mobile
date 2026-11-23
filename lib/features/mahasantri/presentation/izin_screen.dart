@@ -30,13 +30,24 @@ class IzinScreen extends ConsumerStatefulWidget {
 class _IzinScreenState extends ConsumerState<IzinScreen> {
   final _formKey = GlobalKey<FormState>();
   final _alasanController = TextEditingController();
+  final _tanggalController = TextEditingController();
 
   JenisIzin? _jenisIzinDipilih;
   DateTime? _tanggalIzin;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(izinControllerProvider.notifier).loadIzinSaya();
+    });
+  }
+
+  @override
   void dispose() {
     _alasanController.dispose();
+    _tanggalController.dispose();
     super.dispose();
   }
 
@@ -141,11 +152,7 @@ class _IzinScreenState extends ConsumerState<IzinScreen> {
                             ? null
                             : () => _pilihTanggal(context),
                         prefixIcon: Icons.calendar_today_outlined,
-                        controller: TextEditingController(
-                          text: _tanggalIzin != null
-                              ? DateFormat('yyyy-MM-dd').format(_tanggalIzin!)
-                              : '',
-                        ),
+                        controller: _tanggalController,
                         validator: (_) =>
                             _tanggalIzin == null ? 'Tanggal izin wajib diisi' : null,
                         enabled: !izinState.isSubmitting,
@@ -324,6 +331,7 @@ class _IzinScreenState extends ConsumerState<IzinScreen> {
     if (picked != null) {
       setState(() {
         _tanggalIzin = picked;
+        _tanggalController.text = DateFormat('yyyy-MM-dd').format(picked);
       });
     }
   }
@@ -348,6 +356,7 @@ class _IzinScreenState extends ConsumerState<IzinScreen> {
 
     if (berhasil) {
       _alasanController.clear();
+      _tanggalController.clear();
       setState(() {
         _jenisIzinDipilih = null;
         _tanggalIzin = null;

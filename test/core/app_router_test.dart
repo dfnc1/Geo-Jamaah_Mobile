@@ -208,5 +208,26 @@ void main() {
       expect(find.text('Beranda Presensi'), findsOneWidget);
       expect(find.text('PORTAL MAHASANTRI'), findsNothing);
     });
+
+    testWidgets('role tidak dikenal tidak menyebabkan infinite redirect loop', (tester) async {
+      final controller = AuthController(
+        authRepository: fakeAuthRepository,
+        deviceIdService: mockDeviceIdService,
+        autoRestore: false,
+      );
+      controller.state = AuthState.authenticated(
+        user: const UserModel(
+          idPengguna: 'x-1',
+          username: 'aneh',
+          role: 'UnknownRole',
+        ),
+        token: 'token-x',
+      );
+
+      await tester.pumpWidget(buildTestApp(controller: controller));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Masuk Akun'), findsOneWidget);
+    });
   });
 }

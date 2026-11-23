@@ -400,5 +400,43 @@ void main() {
 
       expect(logoutCalled, isFalse);
     });
+
+    test('tidak menyisipkan Authorization pada /auth/login meski token sisa ada', () async {
+      await tokenStore.saveToken('stale-token');
+      bool logoutCalled = false;
+      String? capturedAuthHeader;
+
+      final dio = Dio(BaseOptions(baseUrl: 'http://test.local/v1'));
+      dio.httpClientAdapter = MockHttpAdapter((options) async {
+        capturedAuthHeader = options.headers['Authorization'] as String?;
+        return ResponseBody.fromString(
+          jsonEncode({
+            'success': false,
+            'statusCode': 401,
+            'message': 'Password salah',
+            'error': 'ERR_INVALID_CREDENTIALS',
+          }),
+          401,
+          headers: {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+          },
+        );
+      });
+
+      final client = ApiClient(
+        tokenStore: tokenStore,
+        onLogout: () {
+          logoutCalled = true;
+        },
+        customDio: dio,
+      );
+
+      try {
+        await client.post('/v1/auth/login', data: {'username': 'u', 'password': 'x'});
+      } catch (_) {}
+
+      expect(capturedAuthHeader, isNull);
+      expect(logoutCalled, isFalse);
+    });
   });
 }

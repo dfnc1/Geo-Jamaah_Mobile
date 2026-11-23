@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/app_exception/app_exception.dart';
+import '../../../core/error_mapper.dart';
 import '../data/mahasantri_repository.dart';
 import '../domain/presensi_hari_ini_model.dart';
 
@@ -38,7 +39,7 @@ final berandaPollingIntervalProvider = Provider<Duration?>((ref) {
 });
 
 final berandaControllerProvider =
-    StateNotifierProvider<BerandaController, BerandaState>((ref) {
+    StateNotifierProvider.autoDispose<BerandaController, BerandaState>((ref) {
   final repository = ref.watch(mahasantriRepositoryProvider);
   return BerandaController(repository: repository);
 });
@@ -58,12 +59,14 @@ class BerandaController extends StateNotifier<BerandaState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final response = await repository.getPresensiHariIni();
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         data: response,
         clearError: true,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: _mapErrorMessage(e),
@@ -76,12 +79,14 @@ class BerandaController extends StateNotifier<BerandaState> {
     state = state.copyWith(isRefreshing: true, clearError: true);
     try {
       final response = await repository.getPresensiHariIni();
+      if (!mounted) return;
       state = state.copyWith(
         isRefreshing: false,
         data: response,
         clearError: true,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isRefreshing: false,
         errorMessage: _mapErrorMessage(e),
@@ -94,6 +99,7 @@ class BerandaController extends StateNotifier<BerandaState> {
     if (state.isLoading) return;
     try {
       final response = await repository.getPresensiHariIni();
+      if (!mounted) return;
       state = state.copyWith(
         data: response,
         clearError: true,
@@ -108,22 +114,15 @@ class BerandaController extends StateNotifier<BerandaState> {
     state = state.copyWith(clearError: true);
   }
 
-  String _mapErrorMessage(dynamic error) {
+  String? _mapErrorMessage(dynamic error) {
     if (error is AppException) {
       if (error.status == 401) {
-        return ''; // Ditangani oleh global onLogout
+        return null; // Ditangani oleh global onLogout
       }
-      if (error.status == 403) {
+      if (error.status == 403 || error.code.toUpperCase() == 'ERR_FORBIDDEN_ROLE') {
         return 'Akses ditolak: Anda tidak memiliki izin untuk melihat presensi Mahasantri.';
       }
-      if (error.code == 'ERR_CONNECTION' ||
-          error.code == 'ERR_NETWORK' ||
-          error.code == 'ERR_TIMEOUT') {
-        return 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
-      }
-      if (error.message.isNotEmpty) {
-        return error.message;
-      }
+      return mapAppException(error);
     }
     return 'Terjadi kesalahan saat memuat data presensi. Silakan coba lagi.';
   }

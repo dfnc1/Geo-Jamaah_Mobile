@@ -40,7 +40,7 @@ class IzinState {
 }
 
 final izinControllerProvider =
-    StateNotifierProvider<IzinController, IzinState>((ref) {
+    StateNotifierProvider.autoDispose<IzinController, IzinState>((ref) {
   final repository = ref.watch(izinRepositoryProvider);
   return IzinController(repository: repository);
 });
@@ -55,12 +55,14 @@ class IzinController extends StateNotifier<IzinState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final daftar = await repository.getIzinSaya();
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         daftarIzin: daftar,
         clearError: true,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: _mapErrorMessage(e),
@@ -74,21 +76,23 @@ class IzinController extends StateNotifier<IzinState> {
     state = state.copyWith(isSubmitting: true, clearError: true);
     try {
       final hasil = await repository.ajukanIzin(request);
+      if (!mounted) return false;
       state = state.copyWith(
         isSubmitting: false,
         hasilAjukan: hasil,
         clearError: true,
       );
-      // Muat ulang daftar agar pengajuan baru muncul di daftar
       await loadIzinSaya();
       return true;
     } on AppException catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(
         isSubmitting: false,
         errorMessage: IzinErrorMapper.map(e),
       );
       return false;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(
         isSubmitting: false,
         errorMessage: IzinErrorMapper.map(e),
@@ -107,11 +111,9 @@ class IzinController extends StateNotifier<IzinState> {
     state = state.copyWith(clearHasil: true);
   }
 
-  String _mapErrorMessage(dynamic error) {
-    if (error is AppException) {
-      if (error.status == 401) {
-        return ''; // Ditangani oleh global onLogout
-      }
+  String? _mapErrorMessage(dynamic error) {
+    if (error is AppException && error.status == 401) {
+      return null; // Ditangani oleh global onLogout
     }
     return mapAppException(error);
   }

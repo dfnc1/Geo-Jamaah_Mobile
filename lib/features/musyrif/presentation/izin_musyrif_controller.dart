@@ -39,29 +39,33 @@ class IzinMusyrifState {
 }
 
 final izinMusyrifControllerProvider =
-    StateNotifierProvider<IzinMusyrifController, IzinMusyrifState>((ref) {
+    StateNotifierProvider.autoDispose<IzinMusyrifController, IzinMusyrifState>((ref) {
   final repository = ref.watch(izinMusyrifRepositoryProvider);
   return IzinMusyrifController(repository: repository);
 });
 
 class IzinMusyrifController extends StateNotifier<IzinMusyrifState> {
   final IzinMusyrifRepository repository;
+  int _loadRequestId = 0;
 
   IzinMusyrifController({required this.repository})
       : super(const IzinMusyrifState());
 
   /// Muat daftar izin binaan sesuai filter.
   Future<void> loadIzinBinaan() async {
+    final requestId = ++_loadRequestId;
+    final status = state.filter.rawValue;
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final status = state.filter.rawValue;
       final daftar = await repository.getIzinBinaan(status: status);
+      if (!mounted || requestId != _loadRequestId) return;
       state = state.copyWith(
         isLoading: false,
         daftarIzin: daftar,
         clearError: true,
       );
     } catch (e) {
+      if (!mounted || requestId != _loadRequestId) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: _mapErrorMessage(e),
@@ -85,19 +89,23 @@ class IzinMusyrifController extends StateNotifier<IzinMusyrifState> {
     required String idIzin,
     required String statusBaru,
   }) async {
+    if (state.isVerifying) return false;
     state = state.copyWith(isVerifying: true, clearError: true);
     try {
       await repository.verifikasiIzin(idIzin: idIzin, statusBaru: statusBaru);
+      if (!mounted) return false;
       state = state.copyWith(isVerifying: false, clearError: true);
       await loadIzinBinaan();
       return true;
     } on AppException catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(
         isVerifying: false,
         errorMessage: IzinMusyrifErrorMapper.map(e),
       );
       return false;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(
         isVerifying: false,
         errorMessage: IzinMusyrifErrorMapper.map(e),
@@ -111,11 +119,9 @@ class IzinMusyrifController extends StateNotifier<IzinMusyrifState> {
     state = state.copyWith(clearError: true);
   }
 
-  String _mapErrorMessage(dynamic error) {
-    if (error is AppException) {
-      if (error.status == 401) {
-        return ''; // Ditangani oleh global onLogout
-      }
+  String? _mapErrorMessage(dynamic error) {
+    if (error is AppException && error.status == 401) {
+      return null; // Ditangani oleh global onLogout
     }
     return mapAppException(error);
   }

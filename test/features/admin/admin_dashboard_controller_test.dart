@@ -128,6 +128,41 @@ void main() {
       await controller.muatLebihBanyakLogs();
       expect(controller.state.logPage, 2);
     });
+
+    test('muatLebihBanyakLogs gagal tidak menaikkan logPage agar retry tidak melompati halaman', () async {
+      fakeRepo.mockLogs = const ActivityLogResponse(
+        logs: [
+          ActivityLogItem(
+            idLog: 'log-1',
+            username: 'admin',
+            role: 'Admin',
+            modul: 'Auth',
+            aktivitas: 'Login berhasil',
+            createdAt: '2026-10-18T10:00:00.000Z',
+          ),
+        ],
+        page: 1,
+        limit: 1,
+        total: 3,
+        totalPages: 3,
+      );
+
+      await controller.loadLogs(refresh: true);
+      expect(controller.state.logPage, 1);
+
+      fakeRepo.errorToThrow = const AppException(
+        code: 'ERR_NETWORK',
+        message: 'Network down',
+      );
+      await controller.muatLebihBanyakLogs();
+
+      expect(controller.state.logPage, 1);
+      expect(controller.state.errorLogs, isNotNull);
+
+      fakeRepo.errorToThrow = null;
+      await controller.muatLebihBanyakLogs();
+      expect(controller.state.logPage, 2);
+    });
   });
 
   group('AdminDashboardController - resetDevice', () {

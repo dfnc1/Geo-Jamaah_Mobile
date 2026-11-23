@@ -336,7 +336,7 @@ class _PresensiScreenState extends ConsumerState<PresensiScreen> {
           PrimaryButton(
             label: 'Kembali ke Beranda',
             icon: Icons.home_outlined,
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(context).pop(false),
           ),
         ],
       ),
@@ -462,6 +462,17 @@ class _PresensiScreenState extends ConsumerState<PresensiScreen> {
                     .read(presensiControllerProvider.notifier)
                     .bukaSettingAplikasi(),
           ),
+          const SizedBox(height: 12),
+          PrimaryButton(
+            label: 'Coba Lagi',
+            icon: Icons.refresh,
+            isOutlined: true,
+            onPressed: isBusy
+                ? null
+                : () => ref
+                    .read(presensiControllerProvider.notifier)
+                    .cobaLagi(args),
+          ),
         ];
       case JenisErrorPresensi.gpsNonaktif:
         return [
@@ -473,6 +484,17 @@ class _PresensiScreenState extends ConsumerState<PresensiScreen> {
                 : () => ref
                     .read(presensiControllerProvider.notifier)
                     .bukaSettingLokasi(),
+          ),
+          const SizedBox(height: 12),
+          PrimaryButton(
+            label: 'Coba Lagi',
+            icon: Icons.refresh,
+            isOutlined: true,
+            onPressed: isBusy
+                ? null
+                : () => ref
+                    .read(presensiControllerProvider.notifier)
+                    .cobaLagi(args),
           ),
         ];
       case JenisErrorPresensi.gpsGagal:

@@ -117,14 +117,16 @@ class _IzinMusyrifScreenState extends ConsumerState<IzinMusyrifScreen> {
       );
     }
 
+    final hasError = state.errorMessage != null && state.errorMessage!.isNotEmpty;
+
     return RefreshIndicator(
       color: AppColors.accent,
       onRefresh: () => controller.loadIzinBinaan(),
       child: ListView.builder(
         padding: const EdgeInsets.only(bottom: 16),
-        itemCount: state.daftarIzin.length + (state.errorMessage != null ? 1 : 0),
+        itemCount: state.daftarIzin.length + (hasError ? 1 : 0),
         itemBuilder: (context, index) {
-          if (state.errorMessage != null && index == 0) {
+          if (hasError && index == 0) {
             return Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
               child: ErrorBanner(
@@ -134,7 +136,7 @@ class _IzinMusyrifScreenState extends ConsumerState<IzinMusyrifScreen> {
               ),
             );
           }
-          final itemIndex = state.errorMessage != null ? index - 1 : index;
+          final itemIndex = hasError ? index - 1 : index;
           final izin = state.daftarIzin[itemIndex];
           return _IzinMusyrifCard(
             izin: izin,
@@ -151,18 +153,51 @@ class _IzinMusyrifScreenState extends ConsumerState<IzinMusyrifScreen> {
     IzinMusyrifItem izin,
   ) async {
     final isPending = izin.statusParsed == StatusPersetujuanIzin.pending;
-    final controller =
-        ref.read(izinMusyrifControllerProvider.notifier);
-    final ctrlState = ref.read(izinMusyrifControllerProvider);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (sheetContext, setSheetState) {
+        return Consumer(
+          builder: (sheetContext, sheetRef, _) {
+            final ctrlState = sheetRef.watch(izinMusyrifControllerProvider);
+            final controller =
+                sheetRef.read(izinMusyrifControllerProvider.notifier);
             final verifying = ctrlState.isVerifying;
+
+            Future<void> handleVerify(String statusBaru, String successText, Color successColor) async {
+              final berhasil = await controller.verifikasiIzin(
+                idIzin: izin.idIzin,
+                statusBaru: statusBaru,
+              );
+              if (berhasil && sheetContext.mounted) {
+                Navigator.of(sheetContext).pop();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(successText),
+                      backgroundColor: successColor,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              } else if (!berhasil && context.mounted) {
+                final latestError =
+                    sheetRef.read(izinMusyrifControllerProvider).errorMessage;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      (latestError != null && latestError.isNotEmpty)
+                          ? latestError
+                          : 'Verifikasi gagal.',
+                    ),
+                    backgroundColor: AppColors.error,
+                    duration: const Duration(seconds: 4),
+                  ),
+                );
+              }
+            }
 
             return Container(
               decoration: const BoxDecoration(
@@ -193,9 +228,9 @@ class _IzinMusyrifScreenState extends ConsumerState<IzinMusyrifScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'Detail Izin',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,
@@ -261,38 +296,11 @@ class _IzinMusyrifScreenState extends ConsumerState<IzinMusyrifScreen> {
                             isLoading: verifying,
                             onPressed: verifying
                                 ? null
-                                : () async {
-                                    final berhasil = await controller
-                                        .verifikasiIzin(
-                                          idIzin: izin.idIzin,
-                                          statusBaru: 'Disetujui',
-                                        );
-                                    if (berhasil && context.mounted) {
-                                      Navigator.of(sheetContext).pop();
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                              'Izin disetujui. Daftar diperbarui.'),
-                                          backgroundColor:
-                                              AppColors.success,
-                                          duration: Duration(seconds: 3),
-                                        ),
-                                      );
-                                    } else if (!berhasil && context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                              controllerError(ctrlState) ??
-                                              'Verifikasi gagal.'),
-                                          backgroundColor:
-                                              AppColors.error,
-                                          duration: Duration(seconds: 4),
-                                        ),
-                                      );
-                                    }
-                                  },
+                                : () => handleVerify(
+                                      'Disetujui',
+                                      'Izin disetujui. Daftar diperbarui.',
+                                      AppColors.success,
+                                    ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -305,38 +313,11 @@ class _IzinMusyrifScreenState extends ConsumerState<IzinMusyrifScreen> {
                             textColor: Colors.white,
                             onPressed: verifying
                                 ? null
-                                : () async {
-                                    final berhasil = await controller
-                                        .verifikasiIzin(
-                                          idIzin: izin.idIzin,
-                                          statusBaru: 'Ditolak',
-                                        );
-                                    if (berhasil && context.mounted) {
-                                      Navigator.of(sheetContext).pop();
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                              'Izin ditolak. Daftar diperbarui.'),
-                                          backgroundColor:
-                                              AppColors.error,
-                                          duration: Duration(seconds: 3),
-                                        ),
-                                      );
-                                    } else if (!berhasil && context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                              controllerError(ctrlState) ??
-                                              'Verifikasi gagal.'),
-                                          backgroundColor:
-                                              AppColors.error,
-                                          duration: Duration(seconds: 4),
-                                        ),
-                                      );
-                                    }
-                                  },
+                                : () => handleVerify(
+                                      'Ditolak',
+                                      'Izin ditolak. Daftar diperbarui.',
+                                      AppColors.error,
+                                    ),
                           ),
                         ),
                       ],
@@ -347,7 +328,9 @@ class _IzinMusyrifScreenState extends ConsumerState<IzinMusyrifScreen> {
                   PrimaryButton(
                     label: 'Tutup',
                     icon: Icons.close,
-                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    onPressed: verifying
+                        ? null
+                        : () => Navigator.of(sheetContext).pop(),
                   ),
                 ],
               ),
@@ -439,14 +422,16 @@ class _IzinMusyrifCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Material(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: ListTile(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
         contentPadding: const EdgeInsets.all(16),
         title: Text(
           izin.namaMahasantri,
@@ -517,9 +502,7 @@ class _IzinMusyrifCard extends StatelessWidget {
         trailing: StatusBadge(status: izin.statusPersetujuan),
         onTap: onTap,
       ),
+      ),
     );
   }
 }
-
-/// Ambil pesan error aktif dari state izin Musyrif (untuk SnackBar gagal).
-String? controllerError(IzinMusyrifState state) => state.errorMessage;

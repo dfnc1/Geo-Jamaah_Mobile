@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/widgets.dart';
@@ -23,12 +22,11 @@ class _SantriTabScreenState extends ConsumerState<SantriTabScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final controller = ref.read(musyrifDashboardControllerProvider.notifier);
       controller.loadKritis();
       controller.loadTren();
-      final today = DateTime.now();
-      final formatted = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-      controller.loadMonitoring(formatted);
+      controller.loadMonitoring();
     });
   }
 
@@ -154,14 +152,27 @@ class _KritisSection extends ConsumerWidget {
       );
     }
 
+    final hasError = state.errorKritis != null && state.errorKritis!.isNotEmpty;
+
     return RefreshIndicator(
       color: AppColors.accent,
       onRefresh: () => controller.loadKritis(),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: state.daftarKritis.length,
+        itemCount: state.daftarKritis.length + (hasError ? 1 : 0),
         itemBuilder: (context, index) {
-          final kritis = state.daftarKritis[index];
+          if (hasError && index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: ErrorBanner(
+                title: 'Gagal Memperbarui Data Kritis',
+                message: state.errorKritis!,
+                onRetry: () => controller.loadKritis(),
+                onDismiss: () => controller.clearError(),
+              ),
+            );
+          }
+          final kritis = state.daftarKritis[hasError ? index - 1 : index];
           return _KritisCard(kritis: kritis);
         },
       ),
@@ -464,6 +475,19 @@ class _MonitoringSection extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
 
+        // Error saat ganti tanggal sementara data lama masih tampil
+        if (state.errorMonitoring != null &&
+            state.errorMonitoring!.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: ErrorBanner(
+              title: 'Gagal Memperbarui Monitoring',
+              message: state.errorMonitoring!,
+              onDismiss: () => controller.clearError(),
+            ),
+          ),
+        ],
+
         // Ringkasan jumlah per status
         if (monitoring != null)
           Padding(
@@ -554,7 +578,16 @@ class _RingkasanRow extends StatelessWidget {
                   bgColor: const Color(0xFFD39E00).withValues(alpha: 0.08),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _RingkasanStat(
+                  label: 'Manual',
+                  value: '${ringkasan.manual}',
+                  color: AppColors.accent,
+                  bgColor: AppColors.accent.withValues(alpha: 0.08),
+                ),
+              ),
+              const SizedBox(width: 6),
               Expanded(
                 child: _RingkasanStat(
                   label: 'Belum',
@@ -852,6 +885,17 @@ class _TrenSection extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
 
+        if (state.errorTren != null && state.errorTren!.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: ErrorBanner(
+              title: 'Gagal Memperbarui Grafik',
+              message: state.errorTren!,
+              onDismiss: () => controller.clearError(),
+            ),
+          ),
+        ],
+
         // Grafik garis
         Expanded(
           child: tren == null || tren.data.isEmpty
@@ -886,268 +930,5 @@ class _TrenSection extends ConsumerWidget {
         ),
       );
     }).toList();
-  }
-}
-
-/// Grafik garis persen_hadir sederhana tanpa dependensi eksternal.
-class TrenGrafik extends StatelessWidget {
-  final List<TrenHarian> data;
-
-  const TrenGrafik({super.key, required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    final validData = data.where((d) => d.persenHadir != null).toList();
-    final avg = validData.isNotEmpty
-        ? (validData.map((d) => d.persenHadir!).reduce((a, b) => a + b) /
-                validData.length)
-            .toStringAsFixed(1)
-        : '-';
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header ringkasan tren
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Rata-rata Kehadiran',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        avg == '-' ? '-' : '$avg%',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.emerald,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (data.isNotEmpty)
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text(
-                          'Nilai Terakhir',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${data.last.persenDisplay}% (${data.last.total} data)',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Area Grafik Garis dengan Sumbu Y Vertikal di kiri
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(10, 16, 16, 12),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Label Sumbu Y Vertikal (100% - 0%)
-                        SizedBox(
-                          width: 34,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: const [
-                              Text('100%', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                              Text('75%', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                              Text('50%', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                              Text('25%', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                              Text('0%', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Canvas Grafik
-                        Expanded(
-                          child: _GarisGrafik(data: data),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Label Sumbu X (Tanggal Pertama & Terakhir)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 42),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        if (data.isNotEmpty)
-                          Text(
-                            _singkatTanggal(data.first.tanggal),
-                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                          ),
-                        if (data.length > 2)
-                          Text(
-                            _singkatTanggal(data[data.length ~/ 2].tanggal),
-                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                          ),
-                        if (data.isNotEmpty)
-                          Text(
-                            _singkatTanggal(data.last.tanggal),
-                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-      ),
-    );
-  }
-
-  static String _singkatTanggal(String tanggal) {
-    try {
-      final parsed = DateTime.parse(tanggal);
-      return DateFormat('dd/MM').format(parsed);
-    } catch (_) {
-      return tanggal;
-    }
-  }
-}
-
-/// Custom painter untuk garis grafik. Nilai null digambarkan terputus.
-class _GarisGrafik extends StatefulWidget {
-  final List<TrenHarian> data;
-
-  const _GarisGrafik({required this.data});
-
-  @override
-  State<_GarisGrafik> createState() => _GarisGrafikState();
-}
-
-class _GarisGrafikState extends State<_GarisGrafik> {
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size.infinite,
-      painter: _LinePainter(data: widget.data),
-    );
-  }
-}
-
-class _LinePainter extends CustomPainter {
-  final List<TrenHarian> data;
-
-  _LinePainter({required this.data});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Gambar garis kisi-kisi horizontal
-    final gridPaint = Paint()
-      ..color = AppColors.lightGrey
-      ..strokeWidth = 1;
-
-    for (int step = 0; step <= 4; step++) {
-      final y = size.height * (step / 4.0);
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    if (data.isEmpty) return;
-
-    final paintLine = Paint()
-      ..color = AppColors.accent
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke;
-
-    final paintDot = Paint()
-      ..color = AppColors.accent
-      ..style = PaintingStyle.fill;
-
-    final paintDotInner = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    double maxX = (data.length - 1).toDouble();
-    if (maxX == 0) maxX = 1;
-
-    double? prevX;
-    double? prevY;
-
-    for (int i = 0; i < data.length; i++) {
-      final d = data[i];
-      final x = (size.width / maxX) * i;
-      double? y;
-      if (d.persenHadir != null) {
-        y = size.height * (1 - (d.persenHadir! / 100).clamp(0.0, 1.0));
-      }
-
-      if (y != null && prevY != null && prevX != null) {
-        canvas.drawLine(
-          Offset(prevX, prevY),
-          Offset(x, y),
-          paintLine,
-        );
-      }
-      if (y != null) {
-        canvas.drawCircle(Offset(x, y), 4, paintDot);
-        canvas.drawCircle(Offset(x, y), 2, paintDotInner);
-      }
-      prevX = x;
-      prevY = y;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _LinePainter oldDelegate) {
-    if (oldDelegate.data.length != data.length) return true;
-    for (int i = 0; i < data.length; i++) {
-      if (oldDelegate.data[i] != data[i]) return true;
-    }
-    return false;
   }
 }

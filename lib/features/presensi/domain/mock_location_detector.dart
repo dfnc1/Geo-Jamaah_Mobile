@@ -10,12 +10,18 @@ abstract class MockLocationDetector {
   Future<bool> isMockLocation(Position position);
 }
 
+Future<bool> _defaultSafeDeviceCheck() => SafeDevice.isMockLocation;
+
 /// Implementasi nyata pendeteksi mock location.
 /// Menghitung: `position.isMocked || isMockLocationDariSafeDevice`.
 /// Jika safe_device melempar error/exception, dianggap `false` dan dicatat ke Logger.
 /// Nilai `true` tetap dikirimkan ke server.
 class DefaultMockLocationDetector implements MockLocationDetector {
-  const DefaultMockLocationDetector();
+  final Future<bool> Function() _checkSafeDevice;
+
+  const DefaultMockLocationDetector({
+    Future<bool> Function() checkSafeDevice = _defaultSafeDeviceCheck,
+  }) : _checkSafeDevice = checkSafeDevice;
 
   @override
   Future<bool> isMockLocation(Position position) async {
@@ -23,7 +29,7 @@ class DefaultMockLocationDetector implements MockLocationDetector {
 
     bool fromSafeDevice = false;
     try {
-      fromSafeDevice = await SafeDevice.isMockLocation;
+      fromSafeDevice = await _checkSafeDevice();
     } catch (e, stack) {
       developer.log(
         'Gagal memeriksa isMockLocation dari safe_device, fallback ke false',

@@ -32,6 +32,8 @@ class FakeTokenStoreForWidget extends TokenStore {
 class FakeIzinRepositoryWidget extends IzinRepository {
   bool shouldFail = false;
   int callCount = 0;
+  int loadCount = 0;
+  List<IzinItem> mockDaftar = [];
 
   FakeIzinRepositoryWidget({required super.apiClient});
 
@@ -50,8 +52,9 @@ class FakeIzinRepositoryWidget extends IzinRepository {
 
   @override
   Future<List<IzinItem>> getIzinSaya() async {
+    loadCount++;
     if (shouldFail) throw AppException(code: 'ERR_CONNECTION', message: 'Connection failed');
-    return [];
+    return mockDaftar;
   }
 }
 
@@ -91,5 +94,34 @@ void main() {
     expect(find.text('Jenis izin wajib dipilih'), findsOneWidget);
     expect(find.text('Tanggal izin wajib diisi'), findsOneWidget);
     expect(find.text('Alasan wajib diisi'), findsOneWidget);
+  });
+
+  testWidgets('otomatis memuat daftar izin saat layar dibuka', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final repo = FakeIzinRepositoryWidget(apiClient: ApiClient(tokenStore: FakeTokenStoreForWidget()));
+    repo.mockDaftar = const [
+      IzinItem(
+        idIzin: 'izin-1',
+        nim: '24050505050',
+        jenisIzin: 'Sakit',
+        tanggalIzin: '2026-10-05T00:00:00.000Z',
+        alasan: 'Demam tinggi',
+        statusPersetujuan: 'Pending',
+      ),
+    ];
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [izinRepositoryProvider.overrideWithValue(repo)],
+      child: const MaterialApp(home: IzinScreen()),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(repo.loadCount, 1);
+    expect(find.text('Demam tinggi'), findsOneWidget);
   });
 }

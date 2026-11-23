@@ -217,3 +217,17 @@ jaringan terbukti (http://<IP>:3000/docs terbuka di browser HP).
   checklist, perilaku yang terjadi, pesan error). Agent memperbaiki satu
   per satu sebagai commit fix(mobile) terpisah, mengulang analyze dan
   test, lalu melapor.
+
+## Backlog Review & Pra-Rilis (Catatan Audit)
+
+Daftar item dari audit kualitas & keamanan yang sengaja ditahan karena butuh keputusan pemilik proyek atau perubahan lingkungan sebelum rilis produksi:
+
+1. **Keamanan jaringan & build rilis Android** (`android/app/src/main/AndroidManifest.xml`, `android/app/build.gradle.kts`, `lib/core/api_client/api_client.dart`)
+   - Pindahkan `android:usesCleartextTraffic="true"` khusus ke `android/app/src/debug/AndroidManifest.xml` (atau `network_security_config.xml` untuk dev lokal saja) setelah backend siap memakai HTTPS, agar kredensial login & JWT tidak lewat HTTP polos di build rilis.
+   - Ganti `applicationId` dari `com.example.geo_jamaah` ke ID unik proyek.
+   - Siapkan `signingConfig` release dengan keystore produksi sendiri (jangan memakai `debug` signing key untuk distribusi).
+2. **Hapus dependensi tak terpakai** (`pubspec.yaml`)
+   - `cupertino_icons` tidak dipakai di mana pun di `lib/` maupun `test/`. Hapus dari `pubspec.yaml`, lalu jalankan `flutter pub get` dari Flutter Windows/IDE.
+3. **Opsional / kualitas lanjutan**
+   - Polling 30 detik di `lib/features/mahasantri/presentation/mahasantri_beranda_screen.dart` tetap berjalan saat user berada di tab Izin/Profil (karena `IndexedStack`); bisa dihentikan per tab bila ingin menekan trafik API.
+   - 30 info `deprecated_member_use` untuk `package:flutter/material.dart` berasal dari Flutter SDK 3.47+ (`package:material_ui/material_ui.dart`) — migrasi massal hanya jika sudah menargetkan SDK tersebut secara permanen.

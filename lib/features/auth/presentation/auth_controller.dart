@@ -16,9 +16,12 @@ final authControllerProvider =
     deviceIdService: deviceIdService,
   );
 
-  authEvent.addListener(() {
+  void onSessionExpired() {
     controller.handleSessionExpired();
-  });
+  }
+
+  authEvent.addListener(onSessionExpired);
+  ref.onDispose(() => authEvent.removeListener(onSessionExpired));
 
   return controller;
 });
@@ -45,7 +48,7 @@ class AuthController extends StateNotifier<AuthState> {
     _isRestoring = true;
     try {
       final session = await _authRepository.restoreSession();
-      if (!_isRestoring) return; // Dibatalkan oleh login/logout berikutnya
+      if (!mounted || !_isRestoring) return;
       if (session != null) {
         state = AuthState.authenticated(
           user: session.user,
@@ -55,7 +58,7 @@ class AuthController extends StateNotifier<AuthState> {
         state = AuthState.unauthenticated();
       }
     } catch (_) {
-      if (_isRestoring) {
+      if (mounted && _isRestoring) {
         state = AuthState.unauthenticated();
       }
     } finally {
@@ -68,12 +71,11 @@ class AuthController extends StateNotifier<AuthState> {
     required String username,
     required String password,
   }) async {
+    if (state.isLoading) return false;
     _isRestoring = false;
     final cleanUsername = username.trim();
-    final cleanPassword = password.trim();
 
-    // Validasi lokal
-    if (cleanUsername.isEmpty || cleanPassword.isEmpty) {
+    if (cleanUsername.isEmpty || password.isEmpty) {
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
         isLoading: false,
@@ -84,8 +86,10 @@ class AuthController extends StateNotifier<AuthState> {
       return false;
     }
 
-    // Ambil Device ID
+    state = state.copyWith(isLoading: true, clearError: true);
+
     final deviceId = await _deviceIdService.getDeviceId();
+    if (!mounted) return false;
     if (deviceId == null || deviceId.isEmpty) {
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
@@ -97,15 +101,13 @@ class AuthController extends StateNotifier<AuthState> {
       return false;
     }
 
-    // Set status memuat
-    state = state.copyWith(isLoading: true, clearError: true);
-
     try {
       final result = await _authRepository.login(
         username: cleanUsername,
-        password: cleanPassword,
+        password: password,
         deviceId: deviceId,
       );
+      if (!mounted) return false;
 
       state = AuthState.authenticated(
         user: result.user,
@@ -113,6 +115,7 @@ class AuthController extends StateNotifier<AuthState> {
       );
       return true;
     } catch (e) {
+      if (!mounted) return false;
       final errorInfo = AuthErrorMapper.map(e);
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
@@ -125,6 +128,7 @@ class AuthController extends StateNotifier<AuthState> {
 
   /// Dipanggil saat token kedaluwarsa (401)
   void handleSessionExpired() {
+    if (!mounted) return;
     _isRestoring = false;
     _authRepository.logout();
     state = AuthState.unauthenticated(
@@ -138,6 +142,7 @@ class AuthController extends StateNotifier<AuthState> {
   Future<void> logout() async {
     _isRestoring = false;
     await _authRepository.logout();
+    if (!mounted) return;
     state = AuthState.unauthenticated();
   }
 

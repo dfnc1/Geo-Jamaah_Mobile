@@ -37,7 +37,7 @@ class AdminRepository {
   /// POST /v1/admin/mahasantri/:nim/reset-device
   Future<ResetDeviceResult> resetDevice(String nim) async {
     final response = await apiClient.post<dynamic>(
-      '/v1/admin/mahasantri/$nim/reset-device',
+      '/v1/admin/mahasantri/${Uri.encodeComponent(nim)}/reset-device',
     );
     if (response.data is Map<String, dynamic>) {
       return ResetDeviceResult.fromJson(response.data as Map<String, dynamic>);

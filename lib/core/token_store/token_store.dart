@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -28,7 +29,13 @@ class TokenStore {
 
   /// Ambil JWT access token
   Future<String?> getToken() async {
-    return await _storage.read(key: _keyToken);
+    try {
+      return await _storage.read(key: _keyToken);
+    } on PlatformException {
+      // Keystore rusak/tidak cocok pasca restore OS: bersihkan agar login tidak terkunci.
+      await _clearSilently();
+      return null;
+    }
   }
 
   /// Hapus JWT access token
@@ -43,13 +50,22 @@ class TokenStore {
 
   /// Ambil data user dalam bentuk Map
   Future<Map<String, dynamic>?> getUser() async {
-    final raw = await _storage.read(key: _keyUser);
-    if (raw == null || raw.isEmpty) return null;
     try {
+      final raw = await _storage.read(key: _keyUser);
+      if (raw == null || raw.isEmpty) return null;
       return jsonDecode(raw) as Map<String, dynamic>;
+    } on PlatformException {
+      await _clearSilently();
+      return null;
     } catch (_) {
       return null;
     }
+  }
+
+  Future<void> _clearSilently() async {
+    try {
+      await clear();
+    } catch (_) {}
   }
 
   /// Hapus data user

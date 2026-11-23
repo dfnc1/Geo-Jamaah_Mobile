@@ -5,7 +5,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../auth/presentation/auth_controller.dart';
-import '../../musyrif/presentation/santri_tab_screen.dart';
 import '../domain/admin_models.dart';
 import 'admin_dashboard_controller.dart';
 
@@ -449,6 +448,18 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
         const Divider(height: 1),
 
         // List Log
+        if (state.errorLogs != null &&
+            state.errorLogs!.isNotEmpty &&
+            state.logs.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: ErrorBanner(
+              title: 'Gagal Memuat Log Tambahan',
+              message: state.errorLogs!,
+              onRetry: () => controller.muatLebihBanyakLogs(),
+            ),
+          ),
+
         Expanded(
           child: RefreshIndicator(
             onRefresh: () => controller.loadLogs(refresh: true),
@@ -544,7 +555,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
           ErrorBanner(
             title: 'Aksi Gagal',
             message: state.actionError!,
-            onRetry: () => controller.clearActionFeedback(),
+            onDismiss: () => controller.clearActionFeedback(),
           ),
           const SizedBox(height: 16),
         ],
@@ -640,11 +651,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                     final sukses = await controller.resetDevice(nim);
                     if (sukses && mounted) {
                       _nimController.clear();
+                      final latestMessage = ref
+                          .read(adminDashboardControllerProvider)
+                          .actionMessage;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            state.actionMessage ??
-                                'Device ID berhasil direset.',
+                            latestMessage ?? 'Device ID berhasil direset.',
                           ),
                           backgroundColor: AppColors.success,
                         ),

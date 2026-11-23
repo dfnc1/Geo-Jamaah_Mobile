@@ -74,7 +74,7 @@ class MusyrifDashboardState {
 }
 
 final musyrifDashboardControllerProvider =
-    StateNotifierProvider<MusyrifDashboardController, MusyrifDashboardState>(
+    StateNotifierProvider.autoDispose<MusyrifDashboardController, MusyrifDashboardState>(
   (ref) {
     final repository = ref.watch(musyrifDashboardRepositoryProvider);
     return MusyrifDashboardController(repository: repository);
@@ -94,12 +94,14 @@ class MusyrifDashboardController
     state = state.copyWith(isLoadingKritis: true, clearErrorKritis: true);
     try {
       final daftar = await repository.getSantriKritis();
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingKritis: false,
         daftarKritis: daftar,
         clearErrorKritis: true,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingKritis: false,
         errorKritis: _mapErrorMessage(e),
@@ -107,21 +109,26 @@ class MusyrifDashboardController
     }
   }
 
-  /// Muat monitoring presensi per tanggal.
-  Future<void> loadMonitoring(String tanggal) async {
+  /// Muat monitoring presensi (kosongkan [tanggal] agar server memakai hari ini WIB).
+  Future<void> loadMonitoring([String? tanggal]) async {
     state = state.copyWith(
       isLoadingMonitoring: true,
       clearErrorMonitoring: true,
-      tanggalMonitoring: DateTime.tryParse(tanggal) ?? state.tanggalMonitoring,
+      tanggalMonitoring: (tanggal != null ? DateTime.tryParse(tanggal) : null) ??
+          state.tanggalMonitoring,
     );
     try {
       final monitoring = await repository.getMonitoring(tanggal: tanggal);
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingMonitoring: false,
         monitoring: monitoring,
+        tanggalMonitoring:
+            DateTime.tryParse(monitoring.tanggal) ?? state.tanggalMonitoring,
         clearErrorMonitoring: true,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingMonitoring: false,
         errorMonitoring: _mapErrorMessage(e),
@@ -134,12 +141,14 @@ class MusyrifDashboardController
     state = state.copyWith(isLoadingTren: true, clearErrorTren: true);
     try {
       final tren = await repository.getTrenKehadiran(hari: hari);
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingTren: false,
         tren: tren,
         clearErrorTren: true,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingTren: false,
         errorTren: _mapErrorMessage(e),
@@ -159,11 +168,9 @@ class MusyrifDashboardController
     state = state.copyWith(clearError: true);
   }
 
-  String _mapErrorMessage(dynamic error) {
-    if (error is AppException) {
-      if (error.status == 401) {
-        return ''; // Ditangani oleh global onLogout
-      }
+  String? _mapErrorMessage(dynamic error) {
+    if (error is AppException && error.status == 401) {
+      return null; // Ditangani oleh global onLogout
     }
     return mapAppException(error);
   }

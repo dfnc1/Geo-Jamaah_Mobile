@@ -128,12 +128,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // 3. Sudah terautentikasi (tidak boleh membuka /login atau /splash)
       if (authState.status == AuthStatus.authenticated) {
         final role = authState.user?.role.toLowerCase();
+        final target = _targetRouteForRole(role);
 
         if (location == '/login' || location == '/splash') {
-          return _targetRouteForRole(role);
+          return target == location ? null : target;
         }
 
-        // Mencegah akses lintas peran
+        // Mencegah akses lintas peran atau role tak dikenal
+        if (target == '/login') {
+          return '/login';
+        }
         if (role == 'mahasantri' && !location.startsWith('/mahasantri')) {
           return '/mahasantri';
         }

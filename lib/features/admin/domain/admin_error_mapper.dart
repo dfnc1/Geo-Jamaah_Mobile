@@ -1,11 +1,12 @@
 import '../../../core/app_exception/app_exception.dart';
+import '../../../core/error_mapper.dart';
 
 class AdminErrorMapper {
   AdminErrorMapper._();
 
   static String map(Object error) {
     if (error is AppException) {
-      switch (error.code) {
+      switch (error.code.toUpperCase()) {
         case 'ERR_MAHASANTRI_NOT_FOUND':
           return 'Mahasantri dengan NIM tersebut tidak ditemukan.';
         case 'ERR_JADWAL_NOT_FOUND':
@@ -18,13 +19,10 @@ class AdminErrorMapper {
           return 'Akses ditolak: Anda tidak memiliki hak akses Admin.';
         case 'ERR_VALIDATION':
           return 'Data atau parameter yang dimasukkan tidak valid.';
-        case 'ERR_NETWORK':
-        case 'ERR_CONNECTION':
-          return 'Gagal terhubung ke server. Periksa koneksi Anda.';
         case 'ERR_TIMEOUT':
           return 'Waktu permintaan habis. Silakan coba lagi.';
         default:
-          return error.message;
+          return mapAppException(error);
       }
     }
     return 'Terjadi kesalahan. Silakan coba lagi.';

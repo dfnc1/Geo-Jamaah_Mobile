@@ -5,3 +5,4 @@ export 'info_banner.dart';
 export 'loading_view.dart';
 export 'primary_button.dart';
 export 'status_badge.dart';
+export 'tren_grafik.dart';

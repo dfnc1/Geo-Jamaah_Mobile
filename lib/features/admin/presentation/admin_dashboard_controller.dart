@@ -105,6 +105,7 @@ final adminDashboardControllerProvider = StateNotifierProvider.autoDispose<
 
 class AdminDashboardController extends StateNotifier<AdminDashboardState> {
   final AdminRepository repository;
+  int _logsRequestId = 0;
 
   AdminDashboardController({required this.repository})
       : super(const AdminDashboardState());
@@ -113,8 +114,10 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
     state = state.copyWith(isLoadingRekap: true, clearErrorRekap: true);
     try {
       final rekap = await repository.getRekap();
+      if (!mounted) return;
       state = state.copyWith(isLoadingRekap: false, rekap: rekap);
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingRekap: false,
         errorRekap: AdminErrorMapper.map(e),
@@ -131,8 +134,10 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
     );
     try {
       final tren = await repository.getTrenKehadiran(hari: targetHari);
+      if (!mounted) return;
       state = state.copyWith(isLoadingTren: false, tren: tren);
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoadingTren: false,
         errorTren: AdminErrorMapper.map(e),
@@ -140,22 +145,24 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
     }
   }
 
-  Future<void> loadLogs({bool refresh = false}) async {
-    if (state.isLoadingLogs) return;
+  Future<void> loadLogs({bool refresh = false, int? page}) async {
+    if (!refresh && state.isLoadingLogs) return;
 
-    final targetPage = refresh ? 1 : state.logPage;
+    final requestId = ++_logsRequestId;
+    final targetPage = refresh ? 1 : (page ?? state.logPage);
+    final targetModul = state.selectedModul;
     state = state.copyWith(
       isLoadingLogs: true,
       clearErrorLogs: true,
-      logPage: targetPage,
     );
 
     try {
       final res = await repository.getActivityLogs(
         page: targetPage,
         limit: 20,
-        modul: state.selectedModul,
+        modul: targetModul,
       );
+      if (!mounted || requestId != _logsRequestId) return;
 
       final newLogs = refresh ? res.logs : [...state.logs, ...res.logs];
 
@@ -166,6 +173,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
         logTotalPages: res.totalPages,
       );
     } catch (e) {
+      if (!mounted || requestId != _logsRequestId) return;
       state = state.copyWith(
         isLoadingLogs: false,
         errorLogs: AdminErrorMapper.map(e),
@@ -175,10 +183,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
 
   Future<void> muatLebihBanyakLogs() async {
     if (state.isLoadingLogs || state.logPage >= state.logTotalPages) return;
-    state = state.copyWith(
-      logPage: state.logPage + 1,
-    );
-    await loadLogs(refresh: false);
+    await loadLogs(refresh: false, page: state.logPage + 1);
   }
 
   void setFilterModul(String modul) {
@@ -204,6 +209,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
 
     try {
       final result = await repository.resetDevice(cleanNim);
+      if (!mounted) return false;
       state = state.copyWith(
         isActionLoading: false,
         lastResetResult: result,
@@ -212,6 +218,7 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
       );
       return true;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(
         isActionLoading: false,
         actionError: AdminErrorMapper.map(e),
@@ -232,16 +239,17 @@ class AdminDashboardController extends StateNotifier<AdminDashboardState> {
         tanggal: tanggal,
         idJadwal: idJadwal,
       );
+      if (!mounted) return false;
       state = state.copyWith(
         isActionLoading: false,
         lastJobResult: result,
         actionMessage:
             'Job selesai: ${result.tidakHadir} Tidak Hadir, ${result.izin} Izin dibuat.',
       );
-      // Muat ulang rekap agar data langsung sinkron
       await loadRekap();
       return true;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(
         isActionLoading: false,
         actionError: AdminErrorMapper.map(e),
